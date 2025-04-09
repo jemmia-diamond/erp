@@ -1,0 +1,31 @@
+# Python
+*.py[cod]
+*$py.class
+__pycache__/
+*.so
+.Python
+env/
+venv/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Frappe/ERPNext
+node_modules
+dist/
+sites/*/site_config.json
+sites/*/private/backups
+sites/*/private/files
+sites/*/public/files
+sites/*/private/files/*
+sites/.task-outlets
+sites/assets/*
+sites/*/private/*
+*.swp
+*.pyc
+*.log
+.vscode
+.idea
+
+# Env
+.env
