@@ -1,4 +1,4 @@
-web: cd /app && bench start
-worker: cd /app && bench worker --queue short
-scheduler: cd /app && bench schedule
-socketio: cd /app && node apps/frappe/socketio.js
+web: bench start
+worker: bench worker --queue short
+scheduler: bench schedule
+socketio: node apps/frappe/socketio.js
