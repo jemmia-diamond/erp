@@ -27,6 +27,8 @@ sites/*/private/*
 .vscode
 .idea
 config/pids
+config/redis_cache.conf
+config/redis_queue.conf
 
 # Env
 .env
