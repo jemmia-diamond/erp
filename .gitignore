@@ -23,9 +23,10 @@ sites/assets/*
 sites/*/private/*
 *.swp
 *.pyc
-*.log
+*.log*
 .vscode
 .idea
+config/pids
 
 # Env
 .env
