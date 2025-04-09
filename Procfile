@@ -1,4 +1,4 @@
-web: bench serve  --port 8000
+web: bench start
 worker: bench worker --queue short
 scheduler: bench schedule
 socketio: node apps/frappe/socketio.js
