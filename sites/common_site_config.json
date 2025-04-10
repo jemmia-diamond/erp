@@ -1,7 +1,7 @@
 {
  "background_workers": 1,
  "file_watcher_port": 6787,
- "frappe_user": "fongfan999",
+ "frappe_user": "frappe",
  "gunicorn_workers": 21,
  "live_reload": true,
  "rebase_on_pull": false,
