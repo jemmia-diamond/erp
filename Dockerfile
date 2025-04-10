@@ -22,15 +22,14 @@ RUN apt-get update && apt-get install -y \
     && npm install -g yarn \
     && apt-get clean
 
+# Install Frappe Bench CLI
+RUN pip install --upgrade pip && pip install frappe-bench
+
 # Set working directory
 WORKDIR /app
 
-# Install Python dependencies
-COPY requirements.txt .
-RUN pip install --upgrade pip && pip install -r requirements.txt
-
 # Copy app code
-COPY . /app
+COPY . .
 
 RUN bench build --production --apps frappe,erpnext
 
