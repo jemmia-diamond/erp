@@ -32,6 +32,8 @@ RUN pip install --upgrade pip && pip install -r requirements.txt
 # Copy app code
 COPY . /app
 
+RUN bench build --production --apps frappe,erpnext
+
 # Set permissions and switch to the frappe user
 RUN chown -R frappe:frappe /app
 USER frappe
