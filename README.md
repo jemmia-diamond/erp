@@ -19,3 +19,10 @@ bench new-site dev.localhost
 bench --site dev.localhost install-app erpnext
 bench --site dev.localhost set-config developer_mode true
 ```
+
+
+## Migrate change - use this when there are changes of doctype in database
+
+```bash
+bench --site dev.locahost migrate
+```
