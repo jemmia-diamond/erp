@@ -11,7 +11,7 @@
     "erpnext": {
         "is_repo": true,
         "resolution": {
-            "commit_hash": "2e2da3493fa7a56714f62c44a809b1650d1b00ab",
+            "commit_hash": "1da25770357a5e849cf38cab575257d98ccc1dc9",
             "branch": "version-15"
         },
         "required": [],

@@ -11,6 +11,7 @@
  "restart_supervisor_on_update": false,
  "restart_systemd_on_update": false,
  "serve_default_site": true,
+ "server_script_enabled": true,
  "shallow_clone": true,
  "socketio_port": 9000,
  "use_redis_auth": false,
