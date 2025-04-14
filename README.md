@@ -4,9 +4,22 @@ What is Frappe Framework? Frappe, pronounced fra-pay, is a full stack, batteries
 ## Development
 
 ```bash
-bench get-app frappe https://github.com/jemmia-diamond/frappe --init-bench
+cd erp
 
+# run pwd to get your absolute path on your machine, replace {pwd} the absolute path in config/*.conf files
+
+# activate your python env
+# run this to create env in your project directory
+python -m venv env
+
+# y (yes) to overwirite the apps
+bench get-app frappe https://github.com/jemmia-diamond/frappe --init-bench 
 bench get-app erpnext https://github.com/jemmia-diamond/erpnext --init-bench
+
+
+
+bench new-site erp.localhost --force
+bench --site erp.localhost install-app erpnext
 
 # And so on..
 ```
