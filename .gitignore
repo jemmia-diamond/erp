@@ -21,10 +21,6 @@ sites/*/private/files/*
 sites/.task-outlets
 sites/assets/*
 sites/*/private/*
-sites/*/public/
-sites/*/private/
-sites/*/logs/
-sites/*/.test_log
 *.swp
 *.pyc
 *.log*
@@ -33,6 +29,9 @@ sites/*/.test_log
 config/pids/*.rdb
 config/redis_cache.conf
 config/redis_queue.conf
+
+
+sites/dev.localhost
 
 # Env
 .env

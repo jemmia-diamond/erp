@@ -1,7 +1,7 @@
 ## Introduction
 What is Frappe Framework? Frappe, pronounced fra-pay, is a full stack, batteries-included, web framework written in Python and Javascript with MariaDB as the database. It is the framework which powers ERPNext, is pretty generic and can be used to build database driven apps.
 
-## Development
+## Development Setup
 
 ```bash
 cd erp
@@ -18,8 +18,11 @@ bench get-app erpnext https://github.com/jemmia-diamond/erpnext --init-bench
 
 
 
-bench new-site erp.localhost --force
-bench --site erp.localhost install-app erpnext
+# create site and install erpnext to the site
+# if you create site with a different name from the guide, remember to list the site in the .gitignore file
+bench new-site dev.localhost
+bench --site dev.localhost install-app erpnext
+bench --site dev.localhost set-config developer_mode true
 
 # And so on..
 ```
