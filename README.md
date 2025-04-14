@@ -3,26 +3,19 @@ What is Frappe Framework? Frappe, pronounced fra-pay, is a full stack, batteries
 
 ## Development Setup
 
+1. Replace your current absolute path in `config/*.conf` files. Run `pwd` may help you to get the path fast.
+2. Set up environment
 ```bash
-cd erp
-
-# run pwd to get your absolute path on your machine, replace {pwd} the absolute path in config/*.conf files
-
-# activate your python env
-# run this to create env in your project directory
+# Activate your python env
 python -m venv env
 
-# y (yes) to overwirite the apps
-bench get-app frappe https://github.com/jemmia-diamond/frappe --init-bench 
-bench get-app erpnext https://github.com/jemmia-diamond/erpnext --init-bench
+# Enter "y (yes)" to overwirite the apps
+bench get-app frappe https://github.com/jemmia-diamond/frappe
+bench get-app erpnext https://github.com/jemmia-diamond/erpnext
 
-
-
-# create site and install erpnext to the site
-# if you create site with a different name from the guide, remember to list the site in the .gitignore file
+# Create site and install erpnext to the site.
+# If you create site with a different name from the guide, don't forget to add it to the .gitignore file
 bench new-site dev.localhost
 bench --site dev.localhost install-app erpnext
 bench --site dev.localhost set-config developer_mode true
-
-# And so on..
 ```
