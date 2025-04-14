@@ -1,6 +1,6 @@
 [submodule "apps/frappe"]
 	path = apps/frappe
-	url = https://github.com/frappe/frappe
+	url = https://github.com/jemmia-diamond/frappe
 [submodule "apps/erpnext"]
 	path = apps/erpnext
-	url = https://github.com/frappe/erpnext
+	url = https://github.com/jemmia-diamond/erpnext
