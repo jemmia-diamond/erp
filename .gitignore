@@ -4,7 +4,7 @@
 __pycache__/
 *.so
 .Python
-env/
+env/pyvenv.cfg
 venv/
 *.egg-info/
 .installed.cfg
