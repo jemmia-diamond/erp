@@ -11,11 +11,11 @@
     "erpnext": {
         "is_repo": true,
         "resolution": {
-            "commit_hash": "147852a5af776105e39cd2c4f0818d47493c9e35",
-            "branch": "develop"
+            "commit_hash": "1da25770357a5e849cf38cab575257d98ccc1dc9",
+            "branch": "version-15"
         },
         "required": [],
         "idx": 2,
-        "version": "16.0.0-dev"
+        "version": "15.57.4"
     }
 }
