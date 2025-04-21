@@ -26,3 +26,20 @@ bench --site dev.localhost set-config developer_mode true
 ```bash
 bench --site dev.locahost migrate
 ```
+
+
+## Custom Docker
+
+1. create a file named "apps.json" and list apps
+
+```json
+[
+    {
+        "url": "https://github.com/jemmia-diamond/erpnext.git",
+        "branch": "version-15"
+    }
+]
+```
+
+2. Generate base64 string from json file:
+
