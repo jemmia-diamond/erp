@@ -32,6 +32,8 @@ jobs:
 
     - name: Build Docker image
       run: |
+        pwd
+        ls -a
         docker build \
           --build-arg=FRAPPE_PATH=https://github.com/jemmia-diamond/frappe.git \
           --build-arg=FRAPPE_BRANCH=version-15 \
