@@ -27,22 +27,15 @@ bench --site dev.localhost set-config developer_mode true
 bench --site dev.localhost migrate
 ```
 
-
-## Custom Docker
+## Custom Docker Image
 
 1. create a file named "apps.json" and list apps
 
-```json
-[
-    {
-        "url": "https://github.com/jemmia-diamond/erpnext.git",
-        "branch": "version-15"
-    }
-]
+- Go to deployment directory
+```bash
+cd /deployment
 ```
-
-2. Generate base64 string from json file:
-
+- Encode apps.json file to base64 stored in APPS_JSON_BASE64
 ```bash
 # ubuntu
 export APPS_JSON_BASE64=$(base64 -w 0 apps.json)
@@ -54,14 +47,6 @@ or
 export APPS_JSON_BASE64=$(base64 -i apps.json)
 ```
 
-3. Clone configs file from Frappe Docker
-
-```bash
-git clone https://github.com/frappe/frappe_docker
-
-cd frappe_docker
-```
-
 
 3. build docker image
 
@@ -70,7 +55,7 @@ docker build \
   --build-arg=FRAPPE_PATH=https://github.com/jemmia-diamond/frappe.git \
   --build-arg=FRAPPE_BRANCH=version-15 \
   --build-arg=PYTHON_VERSION=3.13.2 \
-  --build-arg=NODE_VERSION=18.20.2 \
+  --build-arg=NODE_VERSION=23.11.0 \
   --build-arg=APPS_JSON_BASE64=$APPS_JSON_BASE64 \
   --tag=jemmia_erp \
   --file=./Dockerfile .
