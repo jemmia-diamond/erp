@@ -25,6 +25,8 @@ jobs:
     - name: Encode apps.json to base64
       run: |
         cd deployment
+        pwd
+        ls -a
         export APPS_JSON_BASE64=$(base64 -w 0 apps.json)
         echo "APPS_JSON_BASE64=$APPS_JSON_BASE64" >> $GITHUB_ENV
 
