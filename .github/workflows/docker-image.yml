@@ -45,17 +45,10 @@ jobs:
     - name: Log in to Docker Hub
       uses: docker/login-action@v2
       with:
-        # username: ${{ secrets.DOCKER_USERNAME }}
-        # password: ${{ secrets.DOCKER_PASSWORD }}
-        username: hungtran0302
-        password: Thanhhung_016
-
-    # - name: Push Docker image
-    #   run: |
-    #     docker tag jemmia_erp ${{ secrets.DOCKER_USERNAME }}/jemmia_erp:latest
-    #     docker push ${{ secrets.DOCKER_USERNAME }}/jemmia_erp:latest
+        username: ${{ secrets.DOCKER_USERNAME }}
+        password: ${{ secrets.DOCKER_PASSWORD }}
 
     - name: Push Docker image
       run: |
-        docker tag jemmia_erp hungtran0302/jemmia_erp:latest
-        docker push hungtran0302/jemmia_erp:latest
+        docker tag jemmia_erp ${{ secrets.DOCKER_USERNAME }}/jemmia_erp:latest
+        docker push ${{ secrets.DOCKER_USERNAME }}/jemmia_erp:latest
