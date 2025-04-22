@@ -44,5 +44,34 @@ bench --site dev.localhost migrate
 2. Generate base64 string from json file:
 
 ```bash
-export 
+# ubuntu
+export APPS_JSON_BASE64=$(base64 -w 0 apps.json)
+```
+or
+
+```bash
+#masos
+export APPS_JSON_BASE64=$(base64 -i apps.json)
+```
+
+3. Clone configs file from Frappe Docker
+
+```bash
+git clone https://github.com/frappe/frappe_docker
+
+cd frappe_docker
+```
+
+
+3. build docker image
+
+```bash
+docker build \
+  --build-arg=FRAPPE_PATH=https://github.com/jemmia-diamond/frappe.git \
+  --build-arg=FRAPPE_BRANCH=version-15 \
+  --build-arg=PYTHON_VERSION=3.13.2 \
+  --build-arg=NODE_VERSION=18.20.2 \
+  --build-arg=APPS_JSON_BASE64=$APPS_JSON_BASE64 \
+  --tag=jemmia_erp \
+  --file=./Dockerfile .
 ```
