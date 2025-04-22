@@ -24,7 +24,7 @@ bench --site dev.localhost set-config developer_mode true
 ## Migrate change - use this when there are changes of doctype in database
 
 ```bash
-bench --site dev.locahost migrate
+bench --site dev.localhost migrate
 ```
 
 
@@ -43,3 +43,6 @@ bench --site dev.locahost migrate
 
 2. Generate base64 string from json file:
 
+```bash
+export 
+```
