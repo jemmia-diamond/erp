@@ -29,6 +29,7 @@ sites/*/private/*
 config/pids/*.rdb
 config/redis_cache.conf
 config/redis_queue.conf
+env
 
 # Env
 .env
