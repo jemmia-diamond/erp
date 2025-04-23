@@ -32,3 +32,6 @@ config/redis_queue.conf
 
 # Env
 .env
+
+sites/dev.localhost
+test.*
