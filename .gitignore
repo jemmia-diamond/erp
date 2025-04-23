@@ -29,14 +29,10 @@ sites/*/private/*
 config/pids/*.rdb
 config/redis_cache.conf
 config/redis_queue.conf
-
-
-sites/dev.localhost
+env
 
 # Env
 .env
 
-# Env
-env/
-
-test.ipynb
+sites/dev.localhost
+test.*
