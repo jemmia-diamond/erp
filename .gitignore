@@ -30,13 +30,9 @@ config/pids/*.rdb
 config/redis_cache.conf
 config/redis_queue.conf
 env
-env
-
 # Env
 .env
 
-sites/dev.localhost
-test.*
 
 sites/dev.localhost
 test.*
