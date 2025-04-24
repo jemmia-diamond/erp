@@ -27,36 +27,3 @@ bench --site dev.localhost set-config developer_mode true
 bench --site dev.localhost migrate
 ```
 
-## Custom Docker Image
-
-1. create a file named "apps.json" and list apps
-
-- Go to deployment directory
-```bash
-cd /deployment
-```
-- Encode apps.json file to base64 stored in APPS_JSON_BASE64
-```bash
-# ubuntu
-export APPS_JSON_BASE64=$(base64 -w 0 apps.json)
-```
-or
-
-```bash
-#masos
-export APPS_JSON_BASE64=$(base64 -i apps.json)
-```
-
-
-2. build docker image
-
-```bash
-docker build \
-  --build-arg=FRAPPE_PATH=https://github.com/jemmia-diamond/frappe.git \
-  --build-arg=FRAPPE_BRANCH=version-15 \
-  --build-arg=PYTHON_VERSION=3.13.2 \
-  --build-arg=NODE_VERSION=18.20.2 \
-  --build-arg=APPS_JSON_BASE64=$APPS_JSON_BASE64 \
-  --tag=jemmia_erp \
-  --file=./Dockerfile .
-```
