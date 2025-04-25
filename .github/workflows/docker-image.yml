@@ -8,6 +8,9 @@ jobs:
   build:
     runs-on: ubuntu-latest
 
+    permissions:
+      packages: write
+
     steps:
     - name: Checkout repository
       uses: actions/checkout@v2
@@ -24,13 +27,12 @@ jobs:
 
     - name: Encode apps.json to base64
       run: |
-        cd deployment
-        export APPS_JSON_BASE64=$(base64 -w 0 apps.json)
+        export APPS_JSON_BASE64=$(base64 -w 0 deployment/apps.json)
         echo "APPS_JSON_BASE64=$APPS_JSON_BASE64" >> $GITHUB_ENV
 
     - name: Clone frappe_docker repository
       run: |
-        git clone https://github.com/frappe/frappe_docker.git
+        git clone --depth 1 https://github.com/frappe/frappe_docker.git
 
     - name: Build Docker image
       run: |
