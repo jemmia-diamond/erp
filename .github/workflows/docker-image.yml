@@ -1,0 +1,63 @@
+name: Docker Image CI
+
+on:
+  push:
+    branches: [ "main" ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      packages: write
+      attestations: write
+      id-token: write
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+
+    - name: Set up Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: '3.13.2'
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v2
+      with:
+        node-version: '18.20.2'
+
+    - name: Encode apps.json to base64
+      run: |
+        export APPS_JSON_BASE64=$(base64 -w 0 deployment/apps.json)
+        echo "APPS_JSON_BASE64=$APPS_JSON_BASE64" >> $GITHUB_ENV
+
+    - name: Clone frappe_docker repository
+      run: |
+        git clone --depth 1 https://github.com/frappe/frappe_docker.git
+
+    - name: Build Docker image
+      run: |
+        cd frappe_docker
+        
+        docker build \
+          --build-arg=FRAPPE_PATH=https://github.com/jemmia-diamond/frappe.git \
+          --build-arg=FRAPPE_BRANCH=version-15 \
+          --build-arg=PYTHON_VERSION=3.13.2 \
+          --build-arg=NODE_VERSION=18.20.2 \
+          --build-arg=APPS_JSON_BASE64=$APPS_JSON_BASE64 \
+          --tag=jemmia_erp \
+          --file=images/custom/Containerfile .
+
+    - name: Log in to GitHub Container Registry
+      uses: docker/login-action@v2
+      with:
+        registry: ghcr.io
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Push Docker image to GitHub Container Registry
+      run: |
+        docker tag jemmia_erp ghcr.io/${{ github.repository_owner }}/jemmia_erp:latest
+        docker push ghcr.io/${{ github.repository_owner }}/jemmia_erp:latest
