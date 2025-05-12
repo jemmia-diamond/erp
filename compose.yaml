@@ -1,191 +1,37 @@
-# This template is based on https://github.com/frappe/docker-frappe. Modify it to suit your needs.
-# Version: 15
-# Maintainer: Frappe Technologies Pvt. Ltd. <qgJt0@example.com>
+version: "3"
 
 x-custom-image: &custom_image
-  image: ${IMAGE_NAME:-docker.io/frappe/erpnext}:${VERSION:-version-15}
-  pull_policy: ${PULL_POLICY:-always}
-  deploy:
-    restart_policy:
-      condition: always
-
+  image: ghcr.io/jemmia-diamond/jemmia_erp:latest
 services:
   backend:
     <<: *custom_image
+    networks:
+      - frappe_network
+    deploy:
+      restart_policy:
+        condition: on-failure
     volumes:
       - sites:/home/frappe/frappe-bench/sites
-    networks:
-      - bench-network
-    healthcheck:
-      test:
-        - CMD
-        - wait-for-it
-        - '0.0.0.0:8000'
-      interval: 2s
-      timeout: 10s
-      retries: 30
-
-  frontend:
-    <<: *custom_image
-    command:
-      - nginx-entrypoint.sh
-    depends_on:
-      backend:
-        condition: service_started
-        required: true
-      websocket:
-        condition: service_started
-        required: true
+      - logs:/home/frappe/frappe-bench/logs
     environment:
-      BACKEND: backend:8000
-      FRAPPE_SITE_NAME_HEADER: ${FRAPPE_SITE_NAME_HEADER:-$$host}
-      SOCKETIO: websocket:9000
-      UPSTREAM_REAL_IP_ADDRESS: 127.0.0.1
-      UPSTREAM_REAL_IP_HEADER: X-Forwarded-For
-      UPSTREAM_REAL_IP_RECURSIVE: "off"
-    volumes:
-      - sites:/home/frappe/frappe-bench/sites
-
-    networks:
-      - bench-network
-
-    healthcheck:
-      test:
-        - CMD
-        - wait-for-it
-        - '0.0.0.0:8080'
-      interval: 2s
-      timeout: 30s
-      retries: 30
-
-  queue-default:
-    <<: *custom_image
-    command:
-      - bench
-      - worker
-      - --queue
-      - default
-    volumes:
-      - sites:/home/frappe/frappe-bench/sites
-    networks:
-      - bench-network
-    healthcheck:
-      test:
-        - CMD
-        - wait-for-it
-        - 'redis-queue:6379'
-      interval: 2s
-      timeout: 10s
-      retries: 30
-    depends_on:
-      configurator:
-        condition: service_completed_successfully
-        required: true
-
-  queue-long:
-    <<: *custom_image
-    command:
-      - bench
-      - worker
-      - --queue
-      - long
-    volumes:
-      - sites:/home/frappe/frappe-bench/sites
-    networks:
-      - bench-network
-    healthcheck:
-      test:
-        - CMD
-        - wait-for-it
-        - 'redis-queue:6379'
-      interval: 2s
-      timeout: 10s
-      retries: 30
-    depends_on:
-      configurator:
-        condition: service_completed_successfully
-        required: true
-
-  queue-short:
-    <<: *custom_image
-    command:
-      - bench
-      - worker
-      - --queue
-      - short
-    volumes:
-      - sites:/home/frappe/frappe-bench/sites
-    networks:
-      - bench-network
-    healthcheck:
-      test:
-        - CMD
-        - wait-for-it
-        - 'redis-queue:6379'
-      interval: 2s
-      timeout: 10s
-      retries: 30
-    depends_on:
-      configurator:
-        condition: service_completed_successfully
-        required: true
-
-  scheduler:
-    <<: *custom_image
-    healthcheck:
-      test:
-        - CMD
-        - wait-for-it
-        - 'redis-queue:6379'
-      interval: 2s
-      timeout: 10s
-      retries: 30
-    command:
-      - bench
-      - schedule
-    depends_on:
-      configurator:
-        condition: service_completed_successfully
-        required: true
-    volumes:
-      - sites:/home/frappe/frappe-bench/sites
-    networks:
-      - bench-network
-
-  websocket:
-    <<: *custom_image
-    healthcheck:
-      test:
-        - CMD
-        - wait-for-it
-        - '0.0.0.0:9000'
-      interval: 2s
-      timeout: 10s
-      retries: 30
-    command:
-      - node
-      - /home/frappe/frappe-bench/apps/frappe/socketio.js
-    depends_on:
-      configurator:
-        condition: service_completed_successfully
-        required: true
-    volumes:
-      - sites:/home/frappe/frappe-bench/sites
-    networks:
-      - bench-network
+      DB_HOST: ${DB_HOST:-db}
+      DB_PORT: ${DB_PORT}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MARIADB_ROOT_PASSWORD: ${MARIADB_ROOT_PASSWORD}
 
   configurator:
     <<: *custom_image
+    networks:
+      - frappe_network
     deploy:
-      mode: replicated
-      replicas: ${CONFIGURE:-0}
       restart_policy:
         condition: none
-    entrypoint: ["bash", "-c"]
+    entrypoint:
+      - bash
+      - -c
     command:
       - >
-        [[ $${REGENERATE_APPS_TXT} == "1" ]] && ls -1 apps > sites/apps.txt;
-        [[ -n `grep -hs ^ sites/common_site_config.json | jq -r ".db_host // empty"` ]] && exit 0;
+        ls -1 apps > sites/apps.txt;
         bench set-config -g db_host $$DB_HOST;
         bench set-config -gp db_port $$DB_PORT;
         bench set-config -g redis_cache "redis://$$REDIS_CACHE";
@@ -193,28 +39,31 @@ services:
         bench set-config -g redis_socketio "redis://$$REDIS_QUEUE";
         bench set-config -gp socketio_port $$SOCKETIO_PORT;
     environment:
-      DB_HOST: "${DB_HOST:-db}"
-      DB_PORT: "3306"
+      DB_HOST: ${DB_HOST}
+      DB_PORT: ${DB_PORT}
       REDIS_CACHE: redis-cache:6379
       REDIS_QUEUE: redis-queue:6379
       SOCKETIO_PORT: "9000"
-      REGENERATE_APPS_TXT: "${REGENERATE_APPS_TXT:-0}"
     volumes:
       - sites:/home/frappe/frappe-bench/sites
-    networks:
-      - bench-network
+      - logs:/home/frappe/frappe-bench/logs
 
   create-site:
     <<: *custom_image
+    networks:
+      - frappe_network
     deploy:
-      mode: replicated
-      replicas: ${CREATE_SITE:-0}
       restart_policy:
         condition: none
-    entrypoint: ["bash", "-c"]
+    volumes:
+      - sites:/home/frappe/frappe-bench/sites
+      - logs:/home/frappe/frappe-bench/logs
+    entrypoint:
+      - bash
+      - -c
     command:
       - >
-        wait-for-it -t 120 $$DB_HOST:$$DB_PORT;
+        wait-for-it -t 120 db:3306;
         wait-for-it -t 120 redis-cache:6379;
         wait-for-it -t 120 redis-queue:6379;
         export start=`date +%s`;
@@ -230,19 +79,12 @@ services:
           fi
         done;
         echo "sites/common_site_config.json found";
-        [[ -d "sites/${SITE_NAME}" ]] && echo "${SITE_NAME} already exists" && exit 0;
-        bench new-site --mariadb-user-host-login-scope='%' --admin-password=$${ADMIN_PASSWORD} --db-root-username=root --db-root-password=$${DB_ROOT_PASSWORD} $${INSTALL_APP_ARGS} $${SITE_NAME};
-    volumes:
-      - sites:/home/frappe/frappe-bench/sites
+        bench new-site --mariadb-user-host-login-scope='%' --admin-password=$${ADMIN_PASSWORD} --db-root-username=$${DB_ROOT_USERNAME} --db-root-password=$${DB_ROOT_PASSWORD} --db-port=$${DB_PORT} --install-app erpnext --set-default frontend;
     environment:
-      SITE_NAME: ${SITE_NAME}
       ADMIN_PASSWORD: ${ADMIN_PASSWORD}
-      DB_HOST: ${DB_HOST:-db}
-      DB_PORT: "${DB_PORT:-3306}"
+      DB_ROOT_USERNAME: ${DB_ROOT_USERNAME}
       DB_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
-      INSTALL_APP_ARGS: ${INSTALL_APP_ARGS}
-    networks:
-      - bench-network
+      DB_PORT: ${DB_PORT}
 
   migration:
     <<: *custom_image
@@ -254,105 +96,145 @@ services:
     entrypoint: ["bash", "-c"]
     command:
       - >
-        curl -f http://${SITE_NAME}:8080/api/method/ping || echo "Site busy" && exit 0;
-        bench --site all set-config -p maintenance_mode 1;
-        bench --site all set-config -p pause_scheduler 1;
         bench --site all migrate;
-        bench --site all set-config -p maintenance_mode 0;
-        bench --site all set-config -p pause_scheduler 0;
+        bench --site all clear
     volumes:
       - sites:/home/frappe/frappe-bench/sites
     networks:
-      - bench-network
+      - frappe_network
 
   db:
     image: mariadb:10.6
-    deploy:
-      mode: replicated
-      replicas: ${ENABLE_DB:-0}
-      restart_policy:
-        condition: always
+    networks:
+      - frappe_network
     healthcheck:
-      test: mysqladmin ping -h localhost --password=${DB_ROOT_PASSWORD}
+      test: mysqladmin ping -h localhost --password=$${MARIADB_ROOT_PASSWORD}
       interval: 1s
       retries: 20
+    deploy:
+      restart_policy:
+        condition: on-failure
     command:
       - --character-set-server=utf8mb4
       - --collation-server=utf8mb4_unicode_ci
       - --skip-character-set-client-handshake
-      - --skip-innodb-read-only-compressed
+      - --skip-innodb-read-only-compressed # Temporary fix for MariaDB 10.6
     environment:
-      - MYSQL_ROOT_PASSWORD=${DB_ROOT_PASSWORD}
-      - MARIADB_ROOT_PASSWORD=${DB_ROOT_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MARIADB_ROOT_PASSWORD: ${MARIADB_ROOT_PASSWORD}
     volumes:
       - db-data:/var/lib/mysql
-    networks:
-      - bench-network
 
-  redis-cache:
+  frontend:
+    <<: *custom_image
+    networks:
+      - frappe_network
+    depends_on:
+      - websocket
     deploy:
       restart_policy:
-        condition: always
-    image: redis:6.2-alpine
+        condition: on-failure
+    command:
+      - nginx-entrypoint.sh
+    environment:
+      BACKEND: backend:8000
+      FRAPPE_SITE_NAME_HEADER: frontend
+      SOCKETIO: websocket:9000
+      UPSTREAM_REAL_IP_ADDRESS: 127.0.0.1
+      UPSTREAM_REAL_IP_HEADER: X-Forwarded-For
+      UPSTREAM_REAL_IP_RECURSIVE: "off"
+      PROXY_READ_TIMEOUT: 120
+      CLIENT_MAX_BODY_SIZE: 50m
     volumes:
-      - redis-cache-data:/data
+      - sites:/home/frappe/frappe-bench/sites
+      - logs:/home/frappe/frappe-bench/logs
+    ports:
+      - "8080:8080"
+
+  queue-long:
+    <<: *custom_image
     networks:
-      - bench-network
-    healthcheck:
-      test:
-        - CMD
-        - redis-cli
-        - ping
-      interval: 5s
-      timeout: 5s
-      retries: 3
+      - frappe_network
+    deploy:
+      restart_policy:
+        condition: on-failure
+    command:
+      - bench
+      - worker
+      - --queue
+      - long,default,short
+    volumes:
+      - sites:/home/frappe/frappe-bench/sites
+      - logs:/home/frappe/frappe-bench/logs
+
+  queue-short:
+    <<: *custom_image
+    networks:
+      - frappe_network
+    deploy:
+      restart_policy:
+        condition: on-failure
+    command:
+      - bench
+      - worker
+      - --queue
+      - short,default
+    volumes:
+      - sites:/home/frappe/frappe-bench/sites
+      - logs:/home/frappe/frappe-bench/logs
 
   redis-queue:
+    image: redis:6.2-alpine
+    networks:
+      - frappe_network
     deploy:
       restart_policy:
-        condition: always
-    image: redis:6.2-alpine
+        condition: on-failure
     volumes:
       - redis-queue-data:/data
-    networks:
-      - bench-network
-    healthcheck:
-      test:
-        - CMD
-        - redis-cli
-        - ping
-      interval: 5s
-      timeout: 5s
-      retries: 3
 
-  redis-socketio:
+  redis-cache:
+    image: redis:6.2-alpine
+    networks:
+      - frappe_network
     deploy:
       restart_policy:
-        condition: always
-    image: redis:6.2-alpine
-    volumes:
-      - redis-socketio-data:/data
+        condition: on-failure
+
+  scheduler:
+    <<: *custom_image
     networks:
-      - bench-network
-    healthcheck:
-      test:
-        - CMD
-        - redis-cli
-        - ping
-      interval: 5s
-      timeout: 5s
-      retries: 3
+      - frappe_network
+    deploy:
+      restart_policy:
+        condition: on-failure
+    command:
+      - bench
+      - schedule
+    volumes:
+      - sites:/home/frappe/frappe-bench/sites
+      - logs:/home/frappe/frappe-bench/logs
+
+  websocket:
+    <<: *custom_image
+    networks:
+      - frappe_network
+    deploy:
+      restart_policy:
+        condition: on-failure
+    command:
+      - node
+      - /home/frappe/frappe-bench/apps/frappe/socketio.js
+    volumes:
+      - sites:/home/frappe/frappe-bench/sites
+      - logs:/home/frappe/frappe-bench/logs
 
 volumes:
   db-data:
-  redis-cache-data:
   redis-queue-data:
-  redis-socketio-data:
   sites:
-    driver_opts:
-      type: "${SITE_VOLUME_TYPE}"
-      o: "${SITE_VOLUME_OPTS}"
-      device: "${SITE_VOLUME_DEV}"
+  logs:
 
 networks:
-  bench-network:
+  frappe_network:
+    driver: bridge
