@@ -63,7 +63,7 @@ services:
       - -c
     command:
       - >
-        wait-for-it -t 120 db:$${DB_PORT};
+        wait-for-it -t 120 $${DB_HOST}:$${DB_PORT};
         wait-for-it -t 120 redis-cache:6379;
         wait-for-it -t 120 redis-queue:6379;
         export start=`date +%s`;
@@ -85,6 +85,7 @@ services:
       DB_ROOT_USERNAME: ${DB_ROOT_USERNAME}
       DB_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
       DB_PORT: ${DB_PORT}
+      DB_HOST: ${DB_HOST:-db}
 
   migration:
     <<: *custom_image
