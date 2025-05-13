@@ -32,7 +32,7 @@ services:
       - nginx-entrypoint.sh
     environment:
       BACKEND: backend:8000
-      FRAPPE_SITE_NAME_HEADER: frontend
+      FRAPPE_SITE_NAME_HEADER: ${SITE_NAME}
       SOCKETIO: websocket:9000
       UPSTREAM_REAL_IP_ADDRESS: 127.0.0.1
       UPSTREAM_REAL_IP_HEADER: X-Forwarded-For
@@ -105,13 +105,15 @@ services:
           fi
         done;
         echo "sites/common_site_config.json found";
-        bench new-site --mariadb-user-host-login-scope='%' --admin-password=$${ADMIN_PASSWORD} --db-root-username=$${DB_ROOT_USERNAME} --db-root-password=$${DB_ROOT_PASSWORD} --db-port=$${DB_PORT} --install-app erpnext --set-default frontend;
+        [[ -d "sites/$${SITE_NAME}" ]] && echo "Site already exists" && exit 0;
+        bench new-site --mariadb-user-host-login-scope='%' --admin-password=$${ADMIN_PASSWORD} --db-root-username=$${DB_ROOT_USERNAME} --db-root-password=$${DB_ROOT_PASSWORD} --db-port=$${DB_PORT} --install-app erpnext --set-default $${SITE_NAME};
     environment:
       ADMIN_PASSWORD: ${ADMIN_PASSWORD}
       DB_ROOT_USERNAME: ${DB_ROOT_USERNAME}
       DB_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
       DB_PORT: ${DB_PORT:-3306}
       DB_HOST: ${DB_HOST:-db}
+      SITE_NAME: ${SITE_NAME}
 
   migration:
     <<: *custom_image
