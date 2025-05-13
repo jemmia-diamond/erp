@@ -24,6 +24,32 @@ services:
       MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
       MARIADB_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
 
+  frontend:
+    <<: *custom_image
+    networks:
+      - frappe_network
+    depends_on:
+      - websocket
+    deploy:
+      restart_policy:
+        condition: on-failure
+    command:
+      - nginx-entrypoint.sh
+    environment:
+      BACKEND: backend:8000
+      FRAPPE_SITE_NAME_HEADER: frontend
+      SOCKETIO: websocket:9000
+      UPSTREAM_REAL_IP_ADDRESS: 127.0.0.1
+      UPSTREAM_REAL_IP_HEADER: X-Forwarded-For
+      UPSTREAM_REAL_IP_RECURSIVE: "off"
+      PROXY_READ_TIMEOUT: 120
+      CLIENT_MAX_BODY_SIZE: 50m
+    volumes:
+      - sites:/home/frappe/frappe-bench/sites
+      - logs:/home/frappe/frappe-bench/logs
+    ports:
+      - "8080:8080"
+
   configurator:
     <<: *custom_image
     networks:
@@ -118,7 +144,7 @@ services:
     networks:
       - frappe_network
     healthcheck:
-      test: mysqladmin ping -h localhost --password=$${DB_ROOT_PASSWORD}
+      test: mysqladmin ping -h localhost --password=$${MARIADB_ROOT_PASSWORD}
       interval: 1s
       retries: 20
     deploy:
@@ -134,32 +160,6 @@ services:
       MARIADB_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
     volumes:
       - db-data:/var/lib/mysql
-
-  frontend:
-    <<: *custom_image
-    networks:
-      - frappe_network
-    depends_on:
-      - websocket
-    deploy:
-      restart_policy:
-        condition: on-failure
-    command:
-      - nginx-entrypoint.sh
-    environment:
-      BACKEND: backend:8000
-      FRAPPE_SITE_NAME_HEADER: frontend
-      SOCKETIO: websocket:9000
-      UPSTREAM_REAL_IP_ADDRESS: 127.0.0.1
-      UPSTREAM_REAL_IP_HEADER: X-Forwarded-For
-      UPSTREAM_REAL_IP_RECURSIVE: "off"
-      PROXY_READ_TIMEOUT: 120
-      CLIENT_MAX_BODY_SIZE: 50m
-    volumes:
-      - sites:/home/frappe/frappe-bench/sites
-      - logs:/home/frappe/frappe-bench/logs
-    ports:
-      - "8080:8080"
 
   queue-long:
     <<: *custom_image
