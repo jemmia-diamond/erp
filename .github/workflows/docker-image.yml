@@ -65,4 +65,5 @@ jobs:
     - name: Send POST request to webhook
       uses: muinmomin/webhook-action@v1.0.0
       with:
-        url: ${{ secrets.WEBHOOK_URL }}
+        url: ${{ secrets.DEPLOY_HOOK_URL }}
+      continue-on-error: true
