@@ -37,3 +37,4 @@ env
 # Dev
 sites/dev.localhost
 test.*
+.DS_Store
