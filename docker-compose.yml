@@ -1,5 +1,3 @@
-version: "3"
-
 x-custom-image: &custom_image
   image: ghcr.io/jemmia-diamond/jemmia_erp:latest
   pull_policy: ${PULL_POLICY:-always}
