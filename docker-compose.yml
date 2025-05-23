@@ -17,21 +17,21 @@ services:
       - bash
       - -c
       - |
-        rm sites/assets/assets.json
+        rm -f sites/assets/assets.json
         start_time=$(date +%s)
-        while [ ! -f /tmp/assets.json ]; do
-          echo "Waiting for /tmp/assets.json to appear..."
+        while [ ! -f sites/shared/assets.json ]; do
+          echo "Waiting for sites/shared/assets.json to appear..."
           sleep 2
           now=$(date +%s)
           if [ $((now - start_time)) -ge 60 ]; then
-            echo "Timeout waiting for /tmp/assets.json, continuing..."
+            echo "Timeout waiting for sites/shared/assets.json, continuing..."
             break
           fi
         done
-        if [ -f /tmp/assets.json ]; then
-          mv /tmp/assets.json sites/assets/assets.json
+        if [ -f sites/shared/assets.json ]; then
+          mv sites/shared/assets.json sites/assets/assets.json
         fi
-        touch /tmp/.success
+        touch sites/shared/.success
         /home/frappe/frappe-bench/env/bin/gunicorn \
           --chdir=/home/frappe/frappe-bench/sites \
           --bind=0.0.0.0:8000 \
@@ -45,7 +45,6 @@ services:
     volumes:
       - sites:/home/frappe/frappe-bench/sites
       - logs:/home/frappe/frappe-bench/logs
-      - ./tmp:/tmp
 
   frontend:
     <<: *custom_image
@@ -60,20 +59,23 @@ services:
       - bash
       - -c
       - |
-        rm sites/assets/assets.json
+        mkdir -p sites/shared
+        rm -f sites/assets/assets.json
         bench build --force
-        cp sites/assets/assets.json /tmp/assets.json
+        cp sites/assets/assets.json sites/shared/assets.json
         start_time=$(date +%s)
-        while [ ! -f /tmp/.success ]; do
-          echo "Waiting for /tmp/.success to appear..."
+        while [ ! -f sites/shared/.success ]; do
+          echo "Waiting for sites/shared/.success to appear..."
           sleep 2
           now=$(date +%s)
           if [ $((now - start_time)) -ge 30 ]; then
-            echo "Timeout waiting for /tmp/.success, continuing..."
+            echo "Timeout waiting for sites/shared/.success, continuing..."
             break
           fi
         done
-        rm /tmp/.success
+        rm -f sites/shared/.success
+        sleep 5
+        rm -f sites/shared/assets.json
         nginx-entrypoint.sh
     environment:
       BACKEND: backend:8000
@@ -87,7 +89,6 @@ services:
     volumes:
       - sites:/home/frappe/frappe-bench/sites
       - logs:/home/frappe/frappe-bench/logs
-      - ./tmp:/tmp
     ports:
       - "8080:8080"
 
