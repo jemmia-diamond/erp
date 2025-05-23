@@ -38,3 +38,4 @@ env
 sites/dev.localhost
 test.*
 .DS_Store
+/tmp

@@ -13,9 +13,32 @@ services:
     deploy:
       restart_policy:
         condition: on-failure
+    command:
+      - bash
+      - -c
+      - |
+        rm sites/assets/assets.json
+        while [ ! -f /tmp/assets.json ]; do
+          echo "Waiting for /tmp/assets.json to appear..."
+          sleep 2
+        done
+        cp /tmp/assets.json sites/assets/assets.json
+        rm /tmp/assets.json
+        touch /tmp/.success
+        /home/frappe/frappe-bench/env/bin/gunicorn \
+          --chdir=/home/frappe/frappe-bench/sites \
+          --bind=0.0.0.0:8000 \
+          --threads=4 \
+          --workers=2 \
+          --worker-class=gthread \
+          --worker-tmp-dir=/dev/shm \
+          --timeout=120 \
+          --preload \
+          frappe.app:application
     volumes:
       - sites:/home/frappe/frappe-bench/sites
       - logs:/home/frappe/frappe-bench/logs
+      - ./tmp:/tmp
 
   frontend:
     <<: *custom_image
@@ -27,7 +50,18 @@ services:
       restart_policy:
         condition: on-failure
     command:
-      - nginx-entrypoint.sh
+      - bash
+      - -c
+      - |
+        rm sites/assets/assets.json
+        bench build --force
+        cp sites/assets/assets.json /tmp/assets.json || true
+        while [ ! -f /tmp/.success ]; do
+          echo "Waiting for /tmp/.success to appear..."
+          sleep 2
+        done
+        rm /tmp/.success
+        nginx-entrypoint.sh
     environment:
       BACKEND: backend:8000
       FRAPPE_SITE_NAME_HEADER: ${SITE_NAME}
@@ -40,6 +74,7 @@ services:
     volumes:
       - sites:/home/frappe/frappe-bench/sites
       - logs:/home/frappe/frappe-bench/logs
+      - ./tmp:/tmp
     ports:
       - "8080:8080"
 
