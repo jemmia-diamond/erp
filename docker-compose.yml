@@ -73,7 +73,7 @@ services:
             break
           fi
         done
-        rm -r sites/shared/.success
+        rm sites/shared/.success
         nginx-entrypoint.sh
     environment:
       BACKEND: backend:8000
