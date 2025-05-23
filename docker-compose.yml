@@ -60,7 +60,7 @@ services:
       - -c
       - |
         mkdir -p sites/shared
-        rm sites/assets/assets.json
+        rm -f sites/assets/assets.json
         bench build --force
          cp sites/assets/assets.json sites/shared/assets.json
         start_time=$(date +%s)
