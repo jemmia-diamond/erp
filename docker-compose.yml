@@ -18,12 +18,19 @@ services:
       - -c
       - |
         rm sites/assets/assets.json
+        start_time=$(date +%s)
         while [ ! -f /tmp/assets.json ]; do
           echo "Waiting for /tmp/assets.json to appear..."
           sleep 2
+          now=$(date +%s)
+          if [ $((now - start_time)) -ge 60 ]; then
+            echo "Timeout waiting for /tmp/assets.json, continuing..."
+            break
+          fi
         done
-        cp /tmp/assets.json sites/assets/assets.json
-        rm /tmp/assets.json
+        if [ -f /tmp/assets.json ]; then
+          mv /tmp/assets.json sites/assets/assets.json
+        fi
         touch /tmp/.success
         /home/frappe/frappe-bench/env/bin/gunicorn \
           --chdir=/home/frappe/frappe-bench/sites \
@@ -55,10 +62,16 @@ services:
       - |
         rm sites/assets/assets.json
         bench build --force
-        cp sites/assets/assets.json /tmp/assets.json || true
+        cp sites/assets/assets.json /tmp/assets.json
+        start_time=$(date +%s)
         while [ ! -f /tmp/.success ]; do
           echo "Waiting for /tmp/.success to appear..."
           sleep 2
+          now=$(date +%s)
+          if [ $((now - start_time)) -ge 30 ]; then
+            echo "Timeout waiting for /tmp/.success, continuing..."
+            break
+          fi
         done
         rm /tmp/.success
         nginx-entrypoint.sh
