@@ -17,7 +17,7 @@ services:
       - bash
       - -c
       - |
-        rm sites/assets/assets.json
+        rm -f sites/assets/assets.json
         start_time=$(date +%s)
         while [ ! -f sites/shared/assets.json ]; do
           echo "Waiting for sites/shared/assets.json to appear..."
@@ -62,7 +62,7 @@ services:
         mkdir -p sites/shared
         rm -f sites/assets/assets.json
         bench build --force
-         cp sites/assets/assets.json sites/shared/assets.json
+        cp sites/assets/assets.json sites/shared/assets.json
         start_time=$(date +%s)
         while [ ! -f sites/shared/.success ]; do
           echo "Waiting for sites/shared/.success to appear..."
@@ -73,7 +73,9 @@ services:
             break
           fi
         done
-        rm sites/shared/.success
+        rm -f sites/shared/.success
+        sleep 5
+        rm -f sites/shared/assets.json
         nginx-entrypoint.sh
     environment:
       BACKEND: backend:8000
