@@ -1,0 +1,292 @@
+x-custom-image: &custom_image
+  image: ghcr.io/jemmia-diamond/jemmia_erp:latest
+  pull_policy: ${PULL_POLICY:-always}
+  deploy:
+    restart_policy:
+      condition: always
+      
+services:
+  backend:
+    <<: *custom_image
+    networks:
+      - frappe_network
+    deploy:
+      restart_policy:
+        condition: on-failure
+    command:
+      - bash
+      - -c
+      - |
+        rm sites/assets/assets.json
+        start_time=$(date +%s)
+        while [ ! -f /tmp/assets.json ]; do
+          echo "Waiting for /tmp/assets.json to appear..."
+          sleep 2
+          now=$(date +%s)
+          if [ $((now - start_time)) -ge 60 ]; then
+            echo "Timeout waiting for /tmp/assets.json, continuing..."
+            break
+          fi
+        done
+        if [ -f /tmp/assets.json ]; then
+          mv /tmp/assets.json sites/assets/assets.json
+        fi
+        touch /tmp/.success
+        /home/frappe/frappe-bench/env/bin/gunicorn \
+          --chdir=/home/frappe/frappe-bench/sites \
+          --bind=0.0.0.0:8000 \
+          --threads=4 \
+          --workers=2 \
+          --worker-class=gthread \
+          --worker-tmp-dir=/dev/shm \
+          --timeout=120 \
+          --preload \
+          frappe.app:application
+    volumes:
+      - sites:/home/frappe/frappe-bench/sites
+      - logs:/home/frappe/frappe-bench/logs
+      - ./tmp:/tmp
+
+  frontend:
+    <<: *custom_image
+    networks:
+      - frappe_network
+    depends_on:
+      - websocket
+    deploy:
+      restart_policy:
+        condition: on-failure
+    command:
+      - bash
+      - -c
+      - |
+        rm sites/assets/assets.json
+        bench build --force
+        cp sites/assets/assets.json /tmp/assets.json
+        start_time=$(date +%s)
+        while [ ! -f /tmp/.success ]; do
+          echo "Waiting for /tmp/.success to appear..."
+          sleep 2
+          now=$(date +%s)
+          if [ $((now - start_time)) -ge 30 ]; then
+            echo "Timeout waiting for /tmp/.success, continuing..."
+            break
+          fi
+        done
+        rm /tmp/.success
+        nginx-entrypoint.sh
+    environment:
+      BACKEND: backend:8000
+      FRAPPE_SITE_NAME_HEADER: ${SITE_NAME}
+      SOCKETIO: websocket:9000
+      UPSTREAM_REAL_IP_ADDRESS: 127.0.0.1
+      UPSTREAM_REAL_IP_HEADER: X-Forwarded-For
+      UPSTREAM_REAL_IP_RECURSIVE: "off"
+      PROXY_READ_TIMEOUT: 120
+      CLIENT_MAX_BODY_SIZE: 50m
+    volumes:
+      - sites:/home/frappe/frappe-bench/sites
+      - logs:/home/frappe/frappe-bench/logs
+      - ./tmp:/tmp
+    ports:
+      - "8080:8080"
+
+  configurator:
+    <<: *custom_image
+    networks:
+      - frappe_network
+    deploy:
+      restart_policy:
+        condition: none
+    entrypoint:
+      - bash
+      - -c
+    command:
+      - >
+        ls -1 apps > sites/apps.txt;
+        bench set-config -g db_host $$DB_HOST;
+        bench set-config -gp db_port $$DB_PORT;
+        bench set-config -g redis_cache "redis://$$REDIS_CACHE";
+        bench set-config -g redis_queue "redis://$$REDIS_QUEUE";
+        bench set-config -g redis_socketio "redis://$$REDIS_QUEUE";
+        bench set-config -gp socketio_port $$SOCKETIO_PORT;
+    environment:
+      DB_HOST: ${DB_HOST:-db}
+      DB_PORT: ${DB_PORT:-3306}
+      REDIS_CACHE: redis-cache:6379
+      REDIS_QUEUE: redis-queue:6379
+      SOCKETIO_PORT: "9000"
+    volumes:
+      - sites:/home/frappe/frappe-bench/sites
+      - logs:/home/frappe/frappe-bench/logs
+
+  create-site:
+    <<: *custom_image
+    networks:
+      - frappe_network
+    deploy:
+      restart_policy:
+        condition: none
+    volumes:
+      - sites:/home/frappe/frappe-bench/sites
+      - logs:/home/frappe/frappe-bench/logs
+    entrypoint:
+      - bash
+      - -c
+    command:
+      - >
+        wait-for-it -t 120 $${DB_HOST}:$${DB_PORT};
+        wait-for-it -t 120 redis-cache:6379;
+        wait-for-it -t 120 redis-queue:6379;
+        export start=`date +%s`;
+        until [[ -n `grep -hs ^ sites/common_site_config.json | jq -r ".db_host // empty"` ]] && \
+          [[ -n `grep -hs ^ sites/common_site_config.json | jq -r ".redis_cache // empty"` ]] && \
+          [[ -n `grep -hs ^ sites/common_site_config.json | jq -r ".redis_queue // empty"` ]];
+        do
+          echo "Waiting for sites/common_site_config.json to be created";
+          sleep 5;
+          if (( `date +%s`-start > 120 )); then
+            echo "could not find sites/common_site_config.json with required keys";
+            exit 1
+          fi
+        done;
+        echo "sites/common_site_config.json found";
+        [[ -d "sites/$${SITE_NAME}" ]] && echo "Site already exists" && exit 0;
+        bench new-site --mariadb-user-host-login-scope='%' --admin-password=$${ADMIN_PASSWORD} --db-root-username=$${DB_ROOT_USERNAME} --db-root-password=$${DB_ROOT_PASSWORD} --db-port=$${DB_PORT} --install-app erpnext --set-default $${SITE_NAME};
+    environment:
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD}
+      DB_ROOT_USERNAME: ${DB_ROOT_USERNAME}
+      DB_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+      DB_PORT: ${DB_PORT:-3306}
+      DB_HOST: ${DB_HOST:-db}
+      SITE_NAME: ${SITE_NAME}
+
+  migration:
+    <<: *custom_image
+    deploy:
+      mode: replicated
+      replicas: ${MIGRATE:-0}
+      restart_policy:
+        condition: none
+    entrypoint: ["bash", "-c"]
+    command:
+      - >
+        bench --site all set-config -p maintenance_mode 1;	
+        bench --site all set-config -p pause_scheduler 1;
+        bench --site all migrate;
+        bench --site all set-config -p maintenance_mode 0;
+        bench --site all set-config -p pause_scheduler 0;
+        bench --site all clear-cache;
+    volumes:
+      - sites:/home/frappe/frappe-bench/sites
+    networks:
+      - frappe_network
+
+  db:
+    image: mariadb:10.6
+    networks:
+      - frappe_network
+    healthcheck:
+      test: mysqladmin ping -h localhost --password=$${MARIADB_ROOT_PASSWORD}
+      interval: 1s
+      retries: 20
+    deploy:
+      restart_policy:
+        condition: on-failure
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+      - --skip-character-set-client-handshake
+      - --skip-innodb-read-only-compressed
+    environment:
+      MARIADB_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+    volumes:
+      - db-data:/var/lib/mysql
+
+  queue-long:
+    <<: *custom_image
+    networks:
+      - frappe_network
+    deploy:
+      restart_policy:
+        condition: on-failure
+    command:
+      - bench
+      - worker
+      - --queue
+      - long,default,short
+    volumes:
+      - sites:/home/frappe/frappe-bench/sites
+      - logs:/home/frappe/frappe-bench/logs
+
+  queue-short:
+    <<: *custom_image
+    networks:
+      - frappe_network
+    deploy:
+      restart_policy:
+        condition: on-failure
+    command:
+      - bench
+      - worker
+      - --queue
+      - short,default
+    volumes:
+      - sites:/home/frappe/frappe-bench/sites
+      - logs:/home/frappe/frappe-bench/logs
+
+  redis-queue:
+    image: redis:6.2-alpine
+    networks:
+      - frappe_network
+    deploy:
+      restart_policy:
+        condition: on-failure
+    volumes:
+      - redis-queue-data:/data
+
+  redis-cache:
+    image: redis:6.2-alpine
+    networks:
+      - frappe_network
+    deploy:
+      restart_policy:
+        condition: on-failure
+
+  scheduler:
+    <<: *custom_image
+    networks:
+      - frappe_network
+    deploy:
+      restart_policy:
+        condition: on-failure
+    command:
+      - bench
+      - schedule
+    volumes:
+      - sites:/home/frappe/frappe-bench/sites
+      - logs:/home/frappe/frappe-bench/logs
+
+  websocket:
+    <<: *custom_image
+    networks:
+      - frappe_network
+    deploy:
+      restart_policy:
+        condition: on-failure
+    command:
+      - node
+      - /home/frappe/frappe-bench/apps/frappe/socketio.js
+    volumes:
+      - sites:/home/frappe/frappe-bench/sites
+      - logs:/home/frappe/frappe-bench/logs
+
+volumes:
+  db-data:
+  redis-queue-data:
+  sites:
+  logs:
+
+networks:
+  frappe_network:
+    driver: bridge

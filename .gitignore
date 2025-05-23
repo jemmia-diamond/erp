@@ -30,9 +30,12 @@ config/pids/*.rdb
 config/redis_cache.conf
 config/redis_queue.conf
 env
+
 # Env
 .env
 
-
+# Dev
 sites/dev.localhost
 test.*
+.DS_Store
+/tmp
