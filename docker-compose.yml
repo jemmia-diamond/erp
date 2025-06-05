@@ -111,12 +111,18 @@ services:
         bench set-config -g redis_queue "redis://$$REDIS_QUEUE";
         bench set-config -g redis_socketio "redis://$$REDIS_QUEUE";
         bench set-config -gp socketio_port $$SOCKETIO_PORT;
+        bench set-config -g ai_hub_url $$AI_HUB_URL;
+        bench set-config -g ai_hub_access_token $$AI_HUB_ACCESS_TOKEN;
+        bench set-config -g ai_hub_webhook $$AI_HUB_WEBHOOK;
     environment:
       DB_HOST: ${DB_HOST:-db}
       DB_PORT: ${DB_PORT:-3306}
       REDIS_CACHE: redis-cache:6379
       REDIS_QUEUE: redis-queue:6379
       SOCKETIO_PORT: "9000"
+      AI_HUB_URL : ${AI_HUB_URL}
+      AI_HUB_ACCESS_TOKEN: ${AI_HUB_ACCESS_TOKEN}
+      AI_HUB_WEBHOOK: ${AI_HUB_ACCESS_TOKEN}
     volumes:
       - sites:/home/frappe/frappe-bench/sites
       - logs:/home/frappe/frappe-bench/logs

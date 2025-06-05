@@ -15,5 +15,8 @@
   "shallow_clone": true,
   "socketio_port": 9000,
   "use_redis_auth": false,
-  "webserver_port": 8000
+  "webserver_port": 8000,
+  "ai_hub_url": "",
+  "ai_hub_access_token": "",
+  "ai_hub_webhook": ""
 }
