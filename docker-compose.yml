@@ -122,7 +122,7 @@ services:
       SOCKETIO_PORT: "9000"
       AI_HUB_URL : ${AI_HUB_URL}
       AI_HUB_ACCESS_TOKEN: ${AI_HUB_ACCESS_TOKEN}
-      AI_HUB_WEBHOOK: ${AI_HUB_ACCESS_TOKEN}
+      AI_HUB_WEBHOOK: ${AI_HUB_WEBHOOK}
     volumes:
       - sites:/home/frappe/frappe-bench/sites
       - logs:/home/frappe/frappe-bench/logs
