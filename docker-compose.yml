@@ -114,6 +114,7 @@ services:
         bench set-config -g ai_hub_url $$AI_HUB_URL;
         bench set-config -g ai_hub_access_token $$AI_HUB_ACCESS_TOKEN;
         bench set-config -g ai_hub_webhook $$AI_HUB_WEBHOOK;
+        bench set-config -g default_mail_lead_owner $$DEFAULT_MAIL_LEAD_OWNER;
     environment:
       DB_HOST: ${DB_HOST:-db}
       DB_PORT: ${DB_PORT:-3306}
@@ -123,6 +124,7 @@ services:
       AI_HUB_URL : ${AI_HUB_URL}
       AI_HUB_ACCESS_TOKEN: ${AI_HUB_ACCESS_TOKEN}
       AI_HUB_WEBHOOK: ${AI_HUB_WEBHOOK}
+      DEFAULT_MAIL_LEAD_OWNER: ${DEFAULT_MAIL_LEAD_OWNER}
     volumes:
       - sites:/home/frappe/frappe-bench/sites
       - logs:/home/frappe/frappe-bench/logs
