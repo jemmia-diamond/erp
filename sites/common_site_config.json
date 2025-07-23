@@ -22,6 +22,6 @@
   "default_mail_lead_owner": "",
   "stringee_api_key_sid": "",
   "stringee_api_key_secret": "",
-    "priority_bench_token": "",
-    "priority_base_url": ""
+  "priority_bearer_token": "",
+  "priority_base_url": ""
 }
