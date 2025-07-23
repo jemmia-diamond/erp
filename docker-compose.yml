@@ -118,6 +118,7 @@ services:
         bench set-config -g stringee_api_key_sid $$STRINGEE_API_KEY_SID;
         bench set-config -g stringee_api_key_secret $$STRINGEE_API_KEY_SECRET;
         bench set-config -g priority_bench_token $$PRIORITY_BENCH_TOKEN;
+        bench set-config -g priority_base_url $$PRIORITY_BASE_URL;
     environment:
       DB_HOST: ${DB_HOST:-db}
       DB_PORT: ${DB_PORT:-3306}
@@ -131,6 +132,7 @@ services:
       STRINGEE_API_KEY_SID: ${STRINGEE_API_KEY_SID}
       STRINGEE_API_KEY_SECRET: ${STRINGEE_API_KEY_SECRET}
       PRIORITY_BENCH_TOKEN: ${PRIORITY_BENCH_TOKEN}
+      PRIORITY_BASE_URL: ${PRIORITY_BASE_URL}
     volumes:
       - sites:/home/frappe/frappe-bench/sites
       - logs:/home/frappe/frappe-bench/logs
