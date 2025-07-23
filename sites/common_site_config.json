@@ -21,5 +21,6 @@
   "ai_hub_webhook": "",
   "default_mail_lead_owner": "",
   "stringee_api_key_sid": "",
-  "stringee_api_key_secret": ""
+  "stringee_api_key_secret": "",
+    "priority_bench_token": ""
 }
