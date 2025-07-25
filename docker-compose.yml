@@ -117,6 +117,8 @@ services:
         bench set-config -g default_mail_lead_owner $$DEFAULT_MAIL_LEAD_OWNER;
         bench set-config -g stringee_api_key_sid $$STRINGEE_API_KEY_SID;
         bench set-config -g stringee_api_key_secret $$STRINGEE_API_KEY_SECRET;
+        bench set-config -g priority_bearer_token $$PRIORITY_BEARER_TOKEN;
+        bench set-config -g priority_base_url $$PRIORITY_BASE_URL;
     environment:
       DB_HOST: ${DB_HOST:-db}
       DB_PORT: ${DB_PORT:-3306}
@@ -129,6 +131,8 @@ services:
       DEFAULT_MAIL_LEAD_OWNER: ${DEFAULT_MAIL_LEAD_OWNER}
       STRINGEE_API_KEY_SID: ${STRINGEE_API_KEY_SID}
       STRINGEE_API_KEY_SECRET: ${STRINGEE_API_KEY_SECRET}
+      PRIORITY_BEARER_TOKEN: ${PRIORITY_BEARER_TOKEN}
+      PRIORITY_BASE_URL: ${PRIORITY_BASE_URL}
     volumes:
       - sites:/home/frappe/frappe-bench/sites
       - logs:/home/frappe/frappe-bench/logs
