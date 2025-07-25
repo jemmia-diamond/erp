@@ -23,5 +23,7 @@
   "stringee_api_key_sid": "",
   "stringee_api_key_secret": "",
   "fn_base_url": "",
-  "fn_bearer_token": ""
+  "fn_bearer_token": "",
+  "priority_bearer_token": "",
+  "priority_base_url": ""
 }
