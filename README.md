@@ -21,7 +21,8 @@ Add the following to your shell configuration file (`~/.zshrc` for Zsh):
 echo 'export PATH="/opt/homebrew/opt/mariadb@10.6/bin:$PATH"' >> ~/.zshrc
 echo 'export PATH="/opt/homebrew/opt/redis@6.2/bin:$PATH"' >> ~/.zshrc
 echo 'export PATH="/opt/homebrew/opt/python@3.12/bin:$PATH"' >> ~/.zshrc
-echo 'alias python=python3' >> ~/.zshrc
+echo 'alias python3="/opt/homebrew/opt/python@3.12/bin/python3.12"' >> ~/.zshrc
+echo 'alias python="/opt/homebrew/opt/python@3.12/bin/python3.12"' >> ~/.zshrc
 
 # Reload your shell configuration
 source ~/.zshrc
@@ -33,7 +34,7 @@ source ~/.zshrc
 # Start MariaDB
 brew services start mariadb@10.6
 
-# Set root password
+# Set root password (optional for local development)
 sudo mysql -u root -e "ALTER USER 'root'@'localhost' IDENTIFIED BY '123456'; FLUSH PRIVILEGES;"
 
 # Start Redis
