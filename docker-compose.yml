@@ -17,21 +17,6 @@ services:
       - bash
       - -c
       - |
-        rm -f sites/assets/assets.json
-        start_time=$(date +%s)
-        while [ ! -f sites/shared/assets.json ]; do
-          echo "Waiting for sites/shared/assets.json to appear..."
-          sleep 2
-          now=$(date +%s)
-          if [ $((now - start_time)) -ge 60 ]; then
-            echo "Timeout waiting for sites/shared/assets.json, continuing..."
-            break
-          fi
-        done
-        if [ -f sites/shared/assets.json ]; then
-          mv sites/shared/assets.json sites/assets/assets.json
-        fi
-        touch sites/shared/.success
         /home/frappe/frappe-bench/env/bin/gunicorn \
           --chdir=/home/frappe/frappe-bench/sites \
           --bind=0.0.0.0:8000 \
@@ -51,32 +36,13 @@ services:
     networks:
       - frappe_network
     depends_on:
+      - backend
       - websocket
     deploy:
       restart_policy:
         condition: on-failure
     command:
-      - bash
-      - -c
-      - |
-        mkdir -p sites/shared
-        rm -f sites/assets/assets.json
-        bench build --force
-        cp sites/assets/assets.json sites/shared/assets.json
-        start_time=$(date +%s)
-        while [ ! -f sites/shared/.success ]; do
-          echo "Waiting for sites/shared/.success to appear..."
-          sleep 2
-          now=$(date +%s)
-          if [ $((now - start_time)) -ge 30 ]; then
-            echo "Timeout waiting for sites/shared/.success, continuing..."
-            break
-          fi
-        done
-        rm -f sites/shared/.success
-        sleep 5
-        rm -f sites/shared/assets.json
-        nginx-entrypoint.sh
+      - nginx-entrypoint.sh
     environment:
       BACKEND: backend:8000
       FRAPPE_SITE_NAME_HEADER: ${SITE_NAME}
@@ -192,12 +158,13 @@ services:
     entrypoint: ["bash", "-c"]
     command:
       - >
-        bench --site all set-config -p maintenance_mode 1;	
+        bench --site all set-config -p maintenance_mode 1;
         bench --site all set-config -p pause_scheduler 1;
         bench --site all migrate;
+        bench --site all clear-cache;
+        bench --site all clear-website-cache;
         bench --site all set-config -p maintenance_mode 0;
         bench --site all set-config -p pause_scheduler 0;
-        bench --site all clear-cache;
     volumes:
       - sites:/home/frappe/frappe-bench/sites
     networks:
