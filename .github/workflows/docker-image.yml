@@ -69,5 +69,13 @@ jobs:
           -L \
           --max-redirs 3 \
           --fail-with-body \
-          -d '{"source": "github-actions", "repository": "${{ github.repository }}", "commit": "${{ github.sha }}", "branch": "main"}' \
+          -d '{
+            "ref": "refs/heads/main",
+            "repository": {
+              "full_name": "${{ github.repository }}"
+            },
+            "head_commit": {
+              "id": "${{ github.sha }}"
+            }
+          }' \
           "${{ secrets.DEPLOY_HOOK_URL }}" || echo "Webhook failed but continuing..."
