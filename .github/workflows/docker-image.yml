@@ -65,17 +65,13 @@ jobs:
         echo "Triggering Dokploy deployment..."
         curl -X POST \
           -H "Content-Type: application/json" \
-          -H "User-Agent: GitHub-Actions" \
-          -L \
-          --max-redirs 3 \
-          --fail-with-body \
+          -H "X-GitHub-Event: push" \
           -d '{
             "ref": "refs/heads/main",
-            "repository": {
-              "full_name": "${{ github.repository }}"
-            },
             "head_commit": {
-              "id": "${{ github.sha }}"
+              "id": "${{ github.sha }}",
+              "message": "${{ github.event.head_commit.message }}"
             }
           }' \
-          "${{ secrets.DEPLOY_HOOK_URL }}" || echo "Webhook failed but continuing..."
+          "${{ secrets.DEPLOY_HOOK_URL }}"
+      continue-on-error: true
