@@ -62,11 +62,12 @@ jobs:
 
     - name: Send POST request to webhook
       run: |
+        echo "Triggering Dokploy deployment..."
         curl -X POST \
           -H "Content-Type: application/json" \
           -H "User-Agent: GitHub-Actions" \
           -L \
           --max-redirs 3 \
           --fail-with-body \
-          -d '{"source": "github-actions", "repository": "${{ github.repository }}", "commit": "${{ github.sha }}", "branch": "${{ github.ref_name }}"}' \
+          -d '{"source": "github-actions", "repository": "${{ github.repository }}", "commit": "${{ github.sha }}", "branch": "main"}' \
           "${{ secrets.DEPLOY_HOOK_URL }}" || echo "Webhook failed but continuing..."
