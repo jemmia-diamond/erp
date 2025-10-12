@@ -4,12 +4,48 @@ x-custom-image: &custom_image
   deploy:
     restart_policy:
       condition: always
-      
+
 services:
+  # Force sync assets.json on every deployment BEFORE any service starts
+  sync-assets:
+    <<: *custom_image
+    networks:
+      - frappe_network
+    deploy:
+      restart_policy:
+        condition: on-failure
+    entrypoint:
+      - bash
+      - -c
+    command:
+      - >
+        echo "=== Syncing assets from image to volume ===";
+        mkdir -p /home/frappe/frappe-bench/sites/assets;
+        echo "Copying fresh assets.json...";
+        cp -f /home/frappe/frappe-bench/sites/assets/assets.json /home/frappe/frappe-bench/sites/assets/assets.json.new;
+        cp -f /home/frappe/frappe-bench/sites/assets/assets-rtl.json /home/frappe/frappe-bench/sites/assets/assets-rtl.json.new;
+        mv -f /home/frappe/frappe-bench/sites/assets/assets.json.new /home/frappe/frappe-bench/sites/assets/assets.json;
+        mv -f /home/frappe/frappe-bench/sites/assets/assets-rtl.json.new /home/frappe/frappe-bench/sites/assets/assets-rtl.json;
+        echo "Verifying sync...";
+        cat /home/frappe/frappe-bench/sites/assets/assets.json | grep "website.bundle" || echo "WARNING: assets.json verification failed";
+        echo "=== Assets sync complete ===";
+        sleep infinity;
+    volumes:
+      - sites:/home/frappe/frappe-bench/sites
+      - logs:/home/frappe/frappe-bench/logs
+    healthcheck:
+      test: ["CMD", "test", "-f", "/home/frappe/frappe-bench/sites/assets/assets.json"]
+      interval: 5s
+      timeout: 3s
+      retries: 3
+
   backend:
     <<: *custom_image
     networks:
       - frappe_network
+    depends_on:
+      sync-assets:
+        condition: service_healthy
     deploy:
       restart_policy:
         condition: on-failure
@@ -17,6 +53,8 @@ services:
       - bash
       - -c
       - |
+        echo "Backend starting - verifying assets...";
+        cat /home/frappe/frappe-bench/sites/assets/assets.json | grep "website.bundle";
         /home/frappe/frappe-bench/env/bin/gunicorn \
           --chdir=/home/frappe/frappe-bench/sites \
           --bind=0.0.0.0:8000 \
@@ -36,13 +74,22 @@ services:
     networks:
       - frappe_network
     depends_on:
-      - backend
-      - websocket
+      sync-assets:
+        condition: service_healthy
+      backend:
+        condition: service_started
+      websocket:
+        condition: service_started
     deploy:
       restart_policy:
         condition: on-failure
     command:
-      - nginx-entrypoint.sh
+      - bash
+      - -c
+      - |
+        echo "Frontend starting - verifying assets...";
+        cat /home/frappe/frappe-bench/sites/assets/assets.json | grep "website.bundle";
+        nginx-entrypoint.sh
     environment:
       BACKEND: backend:8000
       FRAPPE_SITE_NAME_HEADER: ${SITE_NAME}
@@ -62,6 +109,9 @@ services:
     <<: *custom_image
     networks:
       - frappe_network
+    depends_on:
+      sync-assets:
+        condition: service_healthy
     deploy:
       restart_policy:
         condition: none
@@ -93,7 +143,7 @@ services:
       REDIS_CACHE: redis-cache:6379
       REDIS_QUEUE: redis-queue:6379
       SOCKETIO_PORT: "9000"
-      AI_HUB_URL : ${AI_HUB_URL}
+      AI_HUB_URL: ${AI_HUB_URL}
       AI_HUB_ACCESS_TOKEN: ${AI_HUB_ACCESS_TOKEN}
       AI_HUB_WEBHOOK: ${AI_HUB_WEBHOOK}
       DEFAULT_MAIL_LEAD_OWNER: ${DEFAULT_MAIL_LEAD_OWNER}
@@ -111,6 +161,9 @@ services:
     <<: *custom_image
     networks:
       - frappe_network
+    depends_on:
+      configurator:
+        condition: service_completed_successfully
     deploy:
       restart_policy:
         condition: none
@@ -150,6 +203,9 @@ services:
 
   migration:
     <<: *custom_image
+    depends_on:
+      sync-assets:
+        condition: service_healthy
     deploy:
       mode: replicated
       replicas: ${MIGRATE:-0}
@@ -158,13 +214,16 @@ services:
     entrypoint: ["bash", "-c"]
     command:
       - >
+        wait-for-it -t 120 redis-cache:6379;
         bench --site all set-config -p maintenance_mode 1;
         bench --site all set-config -p pause_scheduler 1;
         bench --site all migrate;
         bench --site all clear-cache;
         bench --site all clear-website-cache;
+        redis-cli -h redis-cache FLUSHALL;
         bench --site all set-config -p maintenance_mode 0;
         bench --site all set-config -p pause_scheduler 0;
+        echo "Migration complete";
     volumes:
       - sites:/home/frappe/frappe-bench/sites
     networks:
@@ -195,6 +254,9 @@ services:
     <<: *custom_image
     networks:
       - frappe_network
+    depends_on:
+      backend:
+        condition: service_started
     deploy:
       restart_policy:
         condition: on-failure
@@ -211,6 +273,9 @@ services:
     <<: *custom_image
     networks:
       - frappe_network
+    depends_on:
+      backend:
+        condition: service_started
     deploy:
       restart_policy:
         condition: on-failure
@@ -245,6 +310,9 @@ services:
     <<: *custom_image
     networks:
       - frappe_network
+    depends_on:
+      backend:
+        condition: service_started
     deploy:
       restart_policy:
         condition: on-failure
@@ -259,6 +327,9 @@ services:
     <<: *custom_image
     networks:
       - frappe_network
+    depends_on:
+      backend:
+        condition: service_started
     deploy:
       restart_policy:
         condition: on-failure
