@@ -61,17 +61,17 @@ jobs:
         platforms: linux/amd64
 
     - name: Send POST request to webhook
+      env:
+        DEPLOY_HOOK_URL: ${{ secrets.DEPLOY_HOOK_URL }}
+        COMMIT_SHA: ${{ github.sha }}
+        COMMIT_MESSAGE: ${{ github.event.head_commit.message }}
       run: |
         echo "Triggering Dokploy deployment..."
-        curl -X POST \
-          -H "Content-Type: application/json" \
-          -H "X-GitHub-Event: push" \
-          -d '{
-            "ref": "refs/heads/main",
-            "head_commit": {
-              "id": "${{ github.sha }}",
-              "message": "${{ github.event.head_commit.message }}"
-            }
-          }' \
-          "${{ secrets.DEPLOY_HOOK_URL }}"
+        jq -n --arg ref "refs/heads/main" --arg id "$COMMIT_SHA" --arg message "$COMMIT_MESSAGE" \
+          '{ref:$ref, head_commit:{id:$id, message:$message}}' \
+          | curl -X POST \
+              -H "Content-Type: application/json" \
+              -H "X-GitHub-Event: push" \
+              --data @- \
+              "$DEPLOY_HOOK_URL"
       continue-on-error: true
