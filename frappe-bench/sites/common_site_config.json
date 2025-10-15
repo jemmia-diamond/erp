@@ -1,0 +1,23 @@
+{
+ "background_workers": 1,
+ "file_watcher_port": 6787,
+ "frappe_user": "nhats",
+ "gunicorn_workers": 23,
+ "live_reload": true,
+ "rebase_on_pull": false,
+ "redis_cache": "redis://127.0.0.1:13000",
+ "redis_queue": "redis://127.0.0.1:11000",
+ "redis_socketio": "redis://127.0.0.1:13000",
+ "restart_supervisor_on_update": false,
+ "restart_systemd_on_update": false,
+ "serve_default_site": true,
+ "shallow_clone": true,
+ "socketio_port": 9000,
+ "use_redis_auth": false,
+ "webserver_port": 8000,
+  "sentry_dsn": "https://f711d13a4358f463baaf27936501cf80@o4508209618354176.ingest.us.sentry.io/4510187317493760",
+  "sentry_site": "jemmia-erp",
+  "sentry_project": "jemmia-erp",
+  "sentry_server_name": "production-server",
+  "enable_telemetry": 1
+}
