@@ -28,20 +28,66 @@ jobs:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
 
-    - name: Encode apps.json to base64
-      run: |
-        export APPS_JSON_BASE64=$(base64 -w 0 deployment/apps.json)
-        echo "APPS_JSON_BASE64=$APPS_JSON_BASE64" >> $GITHUB_ENV
-
     - name: Clone frappe_docker repository
       run: |
         git clone --depth 1 https://github.com/frappe/frappe_docker.git
+
+    - name: Copy local apps to build context
+      run: |
+        cp -r ./apps/frappe ./frappe_docker/local_frappe
+        cp -r ./apps/erpnext ./frappe_docker/local_erpnext
+
+    - name: Create custom Containerfile with local apps
+      run: |
+        cat > ./frappe_docker/Containerfile.custom << 'EOF'
+        ARG FRAPPE_BRANCH=version-15
+        ARG PYTHON_VERSION=3.11.6
+        ARG NODE_VERSION=18.18.2
+        
+        FROM frappe/base:${FRAPPE_BRANCH}
+        
+        USER frappe
+        
+        ARG FRAPPE_BRANCH
+        
+        ENV PYTHONUNBUFFERED=1
+        
+        # Copy local Frappe framework
+        COPY --chown=frappe:frappe local_frappe /home/frappe/local_frappe
+        
+        # Initialize bench with local Frappe
+        RUN bench init \
+            --frappe-branch=${FRAPPE_BRANCH} \
+            --frappe-path=/home/frappe/local_frappe \
+            --no-procfile \
+            --no-backups \
+            --skip-redis-config-generation \
+            --verbose \
+            /home/frappe/frappe-bench && \
+          cd /home/frappe/frappe-bench && \
+          echo "{}" > sites/common_site_config.json
+        
+        # Copy local ERPNext app
+        COPY --chown=frappe:frappe local_erpnext /home/frappe/frappe-bench/apps/erpnext
+        
+        # Install local ERPNext app
+        RUN cd /home/frappe/frappe-bench && \
+          bench get-app --skip-assets erpnext ./apps/erpnext && \
+          bench build --apps erpnext && \
+          find apps -mindepth 1 -path "*/.git" | xargs rm -fr
+        
+        FROM frappe/nginx:${FRAPPE_BRANCH}
+        
+        COPY --from=0 --chown=frappe:frappe /home/frappe/frappe-bench /home/frappe/frappe-bench
+        
+        USER frappe
+        EOF
 
     - name: Build and push Docker image
       uses: docker/build-push-action@v6
       with:
         context: ./frappe_docker
-        file: ./frappe_docker/images/custom/Containerfile
+        file: ./frappe_docker/Containerfile.custom
         push: true
         tags: |
           ghcr.io/${{ github.repository_owner }}/jemmia_erp:latest
