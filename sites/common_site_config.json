@@ -25,10 +25,5 @@
   "fn_base_url": "",
   "fn_bearer_token": "",
   "priority_bearer_token": "",
-  "priority_base_url": "",
-  "sentry_dsn": "https://f711d13a4358f463baaf27936501cf80@o4508209618354176.ingest.us.sentry.io/4510187317493760",
-  "sentry_site": "jemmia-erp",
-  "sentry_project": "jemmia-erp",
-  "sentry_server_name": "production-server",
-  "enable_telemetry": 1
+  "priority_base_url": ""
 }
