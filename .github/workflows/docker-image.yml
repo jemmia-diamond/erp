@@ -33,6 +33,11 @@ jobs:
         export APPS_JSON_BASE64=$(base64 -w 0 deployment/apps.json)
         echo "APPS_JSON_BASE64=$APPS_JSON_BASE64" >> $GITHUB_ENV
 
+    - name: Clone frappe_docker repository
+      run: |
+        git clone --depth 1 https://github.com/frappe/frappe_docker.git
+
+    # ADD THIS: Create custom Containerfile with bench build
     - name: Create Containerfile with asset building
       run: |
         cat > ./frappe_docker/images/custom/Containerfile.custom << 'EOF'
@@ -121,6 +126,7 @@ jobs:
           echo "{}" > sites/common_site_config.json && \
           find apps -mindepth 1 -path "*/.git" | xargs rm -fr
 
+        # CRITICAL: Build production assets
         RUN cd /home/frappe/frappe-bench && \
           echo "Building production assets..." && \
           bench build --production --verbose && \
@@ -168,4 +174,27 @@ jobs:
           FRAPPE_BRANCH=version-15
           PYTHON_VERSION=3.11.6
           NODE_VERSION=18.18.2
-          APPS_JSON_BASE
+          APPS_JSON_BASE64=${{ env.APPS_JSON_BASE64 }}
+        cache-from: |
+          type=gha
+          type=registry,ref=ghcr.io/${{ github.repository_owner }}/jemmia_erp:cache
+        cache-to: |
+          type=gha,mode=max
+          type=registry,ref=ghcr.io/${{ github.repository_owner }}/jemmia_erp:cache,mode=max
+        platforms: linux/amd64
+
+    - name: Send POST request to webhook
+      run: |
+        echo "Triggering Dokploy deployment..."
+        curl -X POST \
+          -H "Content-Type: application/json" \
+          -H "X-GitHub-Event: push" \
+          -d '{
+            "ref": "refs/heads/main",
+            "head_commit": {
+              "id": "${{ github.sha }}",
+              "message": "${{ github.event.head_commit.message }}"
+            }
+          }' \
+          "${{ secrets.DEPLOY_HOOK_URL }}"
+      continue-on-error: true
