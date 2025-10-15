@@ -6,7 +6,7 @@ x-custom-image: &custom_image
       condition: always
 
 services:
-  # Step 1: Sync assets.json from image to volume
+  # Force sync assets.json on every deployment BEFORE any service starts
   sync-assets:
     <<: *custom_image
     networks:
@@ -39,42 +39,12 @@ services:
       timeout: 3s
       retries: 3
 
-  # Step 2: Flush Redis cache after assets sync
-  flush-redis-cache:
-    image: redis:6.2-alpine
-    networks:
-      - frappe_network
-    depends_on:
-      sync-assets:
-        condition: service_healthy
-      redis-cache:
-        condition: service_started
-    deploy:
-      restart_policy:
-        condition: on-failure
-    command:
-      - sh
-      - -c
-      - |
-        echo "=== Flushing Redis cache to prevent asset mismatch ===";
-        sleep 2;
-        redis-cli -h redis-cache FLUSHALL;
-        echo "=== Redis cache flushed successfully ===";
-        sleep infinity;
-    healthcheck:
-      test: ["CMD", "redis-cli", "-h", "redis-cache", "PING"]
-      interval: 5s
-      timeout: 3s
-      retries: 3
-
   backend:
     <<: *custom_image
     networks:
       - frappe_network
     depends_on:
       sync-assets:
-        condition: service_healthy
-      flush-redis-cache:
         condition: service_healthy
     deploy:
       restart_policy:
@@ -105,8 +75,6 @@ services:
       - frappe_network
     depends_on:
       sync-assets:
-        condition: service_healthy
-      flush-redis-cache:
         condition: service_healthy
       backend:
         condition: service_started
@@ -143,8 +111,6 @@ services:
       - frappe_network
     depends_on:
       sync-assets:
-        condition: service_healthy
-      flush-redis-cache:
         condition: service_healthy
     deploy:
       restart_policy:
@@ -240,8 +206,6 @@ services:
     depends_on:
       sync-assets:
         condition: service_healthy
-      flush-redis-cache:
-        condition: service_healthy
     deploy:
       mode: replicated
       replicas: ${MIGRATE:-0}
@@ -256,6 +220,7 @@ services:
         bench --site all migrate;
         bench --site all clear-cache;
         bench --site all clear-website-cache;
+        redis-cli -h redis-cache FLUSHALL;
         bench --site all set-config -p maintenance_mode 0;
         bench --site all set-config -p pause_scheduler 0;
         echo "Migration complete";
