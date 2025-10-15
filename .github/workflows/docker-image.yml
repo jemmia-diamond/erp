@@ -60,6 +60,26 @@ jobs:
           type=registry,ref=ghcr.io/${{ github.repository_owner }}/jemmia_erp:cache,mode=max
         platforms: linux/amd64
 
+    # Verify assets were built in the image
+    - name: Verify built assets in image
+      run: |
+        echo "=== Verifying assets in new image ==="
+        docker pull ghcr.io/${{ github.repository_owner }}/jemmia_erp:latest
+
+        echo "Listing assets directory:"
+        docker run --rm ghcr.io/${{ github.repository_owner }}/jemmia_erp:latest \
+          ls -lah /home/frappe/frappe-bench/sites/assets/
+
+        echo "Checking assets.json content:"
+        docker run --rm ghcr.io/${{ github.repository_owner }}/jemmia_erp:latest \
+          cat /home/frappe/frappe-bench/sites/assets/assets.json | head -10
+
+        echo "Verifying CSS/JS bundles exist:"
+        docker run --rm ghcr.io/${{ github.repository_owner }}/jemmia_erp:latest \
+          bash -c "ls /home/frappe/frappe-bench/apps/frappe/frappe/public/dist/js/*.js | head -5"
+
+        echo "=== Asset verification complete ==="
+
     - name: Send POST request to webhook
       run: |
         echo "Triggering Dokploy deployment..."
