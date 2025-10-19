@@ -6,58 +6,6 @@ x-custom-image: &custom_image
       condition: always
 
 services:
-  backend:
-    <<: *custom_image
-    networks:
-      - frappe_network
-    deploy:
-      restart_policy:
-        condition: on-failure
-    command:
-      - bash
-      - -c
-      - |
-        /home/frappe/frappe-bench/env/bin/gunicorn \
-          --chdir=/home/frappe/frappe-bench/sites \
-          --bind=0.0.0.0:8000 \
-          --threads=4 \
-          --workers=2 \
-          --worker-class=gthread \
-          --worker-tmp-dir=/dev/shm \
-          --timeout=120 \
-          --preload \
-          frappe.app:application
-    volumes:
-      - sites:/home/frappe/frappe-bench/sites
-      - logs:/home/frappe/frappe-bench/logs
-
-  frontend:
-    <<: *custom_image
-    networks:
-      - frappe_network
-    depends_on:
-      - backend
-      - websocket
-    deploy:
-      restart_policy:
-        condition: on-failure
-    command:
-      - nginx-entrypoint.sh
-    environment:
-      BACKEND: backend:8000
-      FRAPPE_SITE_NAME_HEADER: ${SITE_NAME}
-      SOCKETIO: websocket:9000
-      UPSTREAM_REAL_IP_ADDRESS: 127.0.0.1
-      UPSTREAM_REAL_IP_HEADER: X-Forwarded-For
-      UPSTREAM_REAL_IP_RECURSIVE: "off"
-      PROXY_READ_TIMEOUT: 120
-      CLIENT_MAX_BODY_SIZE: 50m
-    volumes:
-      - sites:/home/frappe/frappe-bench/sites
-      - logs:/home/frappe/frappe-bench/logs
-    ports:
-      - "8080:8080"
-
   configurator:
     <<: *custom_image
     networks:
@@ -87,11 +35,6 @@ services:
         bench set-config -g fn_bearer_token $$FN_BEARER_TOKEN;
         bench set-config -g priority_bearer_token $$PRIORITY_BEARER_TOKEN;
         bench set-config -g priority_base_url $$PRIORITY_BASE_URL;
-
-        echo "Building and syncing assets...";
-        rm -f sites/assets/assets.json;
-        bench build --force;
-        redis-cli -h redis-cache FLUSHALL || true;
     environment:
       DB_HOST: ${DB_HOST:-db}
       DB_PORT: ${DB_PORT:-3306}
@@ -111,6 +54,104 @@ services:
     volumes:
       - sites:/home/frappe/frappe-bench/sites
       - logs:/home/frappe/frappe-bench/logs
+
+  asset-builder:
+    <<: *custom_image
+    networks:
+      - frappe_network
+    deploy:
+      restart_policy:
+        condition: none
+    depends_on:
+      configurator:
+        condition: service_completed_successfully
+    entrypoint:
+      - bash
+      - -c
+    command:
+      - >
+        echo "Starting asset build...";
+        rm -f sites/assets/assets.json;
+        rm -f sites/assets/assets-rtl.json;
+        bench build --force;
+        echo "Assets built successfully!";
+    volumes:
+      - sites:/home/frappe/frappe-bench/sites
+      - logs:/home/frappe/frappe-bench/logs
+
+  cache-flusher:
+    image: redis:6.2-alpine
+    networks:
+      - frappe_network
+    deploy:
+      restart_policy:
+        condition: none
+    depends_on:
+      asset-builder:
+        condition: service_completed_successfully
+    command:
+      - sh
+      - -c
+      - redis-cli -h redis-cache FLUSHALL && echo "Cache flushed!"
+
+  backend:
+    <<: *custom_image
+    networks:
+      - frappe_network
+    depends_on:
+      cache-flusher:
+        condition: service_completed_successfully
+    deploy:
+      restart_policy:
+        condition: on-failure
+    command:
+      - bash
+      - -c
+      - |
+        /home/frappe/frappe-bench/env/bin/gunicorn \
+          --chdir=/home/frappe/frappe-bench/sites \
+          --bind=0.0.0.0:8000 \
+          --threads=4 \
+          --workers=2 \
+          --worker-class=gthread \
+          --worker-tmp-dir=/dev/shm \
+          --timeout=120 \
+          --preload \
+          frappe.app:application
+    volumes:
+      - sites:/home/frappe/frappe-bench/sites
+      - logs:/home/frappe/frappe-bench/logs
+
+  frontend:
+    <<: *custom_image
+    networks:
+      - frappe_network
+    depends_on:
+      backend:
+        condition: service_started
+      websocket:
+        condition: service_started
+      cache-flusher:
+        condition: service_completed_successfully
+    deploy:
+      restart_policy:
+        condition: on-failure
+    command:
+      - nginx-entrypoint.sh
+    environment:
+      BACKEND: backend:8000
+      FRAPPE_SITE_NAME_HEADER: ${SITE_NAME}
+      SOCKETIO: websocket:9000
+      UPSTREAM_REAL_IP_ADDRESS: 127.0.0.1
+      UPSTREAM_REAL_IP_HEADER: X-Forwarded-For
+      UPSTREAM_REAL_IP_RECURSIVE: "off"
+      PROXY_READ_TIMEOUT: 120
+      CLIENT_MAX_BODY_SIZE: 50m
+    volumes:
+      - sites:/home/frappe/frappe-bench/sites
+      - logs:/home/frappe/frappe-bench/logs
+    ports:
+      - "8080:8080"
 
   create-site:
     <<: *custom_image
