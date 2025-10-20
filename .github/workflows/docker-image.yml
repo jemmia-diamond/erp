@@ -75,8 +75,8 @@ jobs:
         file: ./frappe_docker/images/custom/Containerfile
         push: true
         tags: |
-          jemmia_erp:${{ steps.tag.outputs.unique_tag }}
-          jemmia_erp:latest
+          ghcr.io/${{ github.repository_owner }}/jemmia_erp:${{ steps.tag.outputs.unique_tag }}
+          ghcr.io/${{ github.repository_owner }}/jemmia_erp:latest
           ${{ steps.meta.outputs.tags }}
         labels: ${{ steps.meta.outputs.labels }}
         build-args: |
@@ -98,11 +98,11 @@ jobs:
         DEPLOY_HOOK_URL: ${{ secrets.DEPLOY_HOOK_URL }}
         COMMIT_SHA: ${{ github.sha }}
         COMMIT_MESSAGE: ${{ github.event.head_commit.message }}
-        IMAGE_TAG: ${{ steps.tag.outputs.unique_tag }}
+        IMAGE_TAG: ghcr.io/${{ github.repository_owner }}/jemmia_erp:${{ steps.tag.outputs.unique_tag }}
       run: |
-        echo "Triggering Dokploy deployment with image tag: ${IMAGE_TAG}..."
-        jq -n --arg ref "refs/heads/main" --arg id "$COMMIT_SHA" --arg message "$COMMIT_MESSAGE" --arg tag "$IMAGE_TAG" \
-          '{ref:$ref, head_commit:{id:$id, message:$message}, image_tag:$tag}' \
+        echo "Triggering Dokploy deployment with image: ${IMAGE_TAG}..."
+        jq -n --arg ref "refs/heads/main" --arg id "$COMMIT_SHA" --arg message "$COMMIT_MESSAGE" --arg image "$IMAGE_TAG" \
+          '{ref:$ref, head_commit:{id:$id, message:$message}, image:$image}' \
           | curl -X POST \
               -H "Content-Type: application/json" \
               -H "X-GitHub-Event: push" \
