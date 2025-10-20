@@ -1,0 +1,88 @@
+name: Build and Deploy
+
+on:
+  push:
+    branches: ["main"]
+
+env:
+  PYTHON_VERSION: "3.13.2"
+  NODE_VERSION: "18.20.2"
+  FRAPPE_PATH: "https://github.com/jemmia-diamond/frappe.git"
+  FRAPPE_BRANCH: "version-15"
+  IMAGE_NAME: "jemmia_erp"
+  REGISTRY: "ghcr.io"
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      packages: write
+      attestations: write
+      id-token: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Prepare build environment
+        run: |
+          export APPS_JSON_BASE64=$(base64 -w 0 deployment/apps.json)
+          echo "APPS_JSON_BASE64=$APPS_JSON_BASE64" >> $GITHUB_ENV
+
+          git clone --depth 1 https://github.com/frappe/frappe_docker.git
+
+      - name: Build Docker image
+        working-directory: frappe_docker
+        run: |
+          docker build \
+            --build-arg=FRAPPE_PATH=${{ env.FRAPPE_PATH }} \
+            --build-arg=FRAPPE_BRANCH=${{ env.FRAPPE_BRANCH }} \
+            --build-arg=PYTHON_VERSION=${{ env.PYTHON_VERSION }} \
+            --build-arg=NODE_VERSION=${{ env.NODE_VERSION }} \
+            --build-arg=APPS_JSON_BASE64=${{ env.APPS_JSON_BASE64 }} \
+            --tag=${{ env.IMAGE_NAME }} \
+            --file=images/custom/Containerfile .
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Push Docker image
+        run: |
+          IMAGE_TAG="${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}:latest"
+          docker tag ${{ env.IMAGE_NAME }} $IMAGE_TAG
+          docker push $IMAGE_TAG
+
+      - name: Trigger deployment webhook
+        if: success()
+        env:
+          DEPLOY_HOOK_URL: ${{ secrets.DEPLOY_HOOK_URL }}
+        run: |
+          echo "Triggering Dokploy deployment..."
+
+          PAYLOAD=$(jq -n \
+            --arg ref "refs/heads/main" \
+            --arg id "${{ github.sha }}" \
+            --arg message "${{ github.event.head_commit.message }}" \
+            '{ref: $ref, head_commit: {id: $id, message: $message}}')
+
+          curl -X POST \
+            -H "Content-Type: application/json" \
+            -H "X-GitHub-Event: push" \
+            -d "$PAYLOAD" \
+            "$DEPLOY_HOOK_URL" || echo "Webhook failed, but continuing..."
