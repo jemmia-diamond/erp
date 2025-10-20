@@ -16,17 +16,28 @@ jobs:
 
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v2
-
-    - name: Set up Python
-      uses: actions/setup-python@v2
+      uses: actions/checkout@v4
       with:
-        python-version: '3.13.2'
+        submodules: recursive
+        fetch-depth: 0
 
-    - name: Set up Node.js
-      uses: actions/setup-node@v2
-      with:
-        node-version: '18.20.2'
+    - name: Generate unique image tag
+      id: tag
+      run: |
+        # Create unique tag based on commit SHA and timestamp
+        TIMESTAMP=$(date +%Y%m%d-%H%M%S)
+        SHORT_SHA=${GITHUB_SHA:0:7}
+        UNIQUE_TAG="v${TIMESTAMP}-${SHORT_SHA}"
+        echo "unique_tag=${UNIQUE_TAG}" >> $GITHUB_OUTPUT
+        echo "Generated unique tag: ${UNIQUE_TAG}"
+
+    - name: Check for submodule changes
+      id: submodules
+      run: |
+        # Get hash of all submodule commits for cache key
+        SUBMODULE_HASH=$(git submodule status | sha256sum | cut -d' ' -f1)
+        echo "submodule_hash=${SUBMODULE_HASH}" >> $GITHUB_OUTPUT
+        echo "Submodule hash: ${SUBMODULE_HASH}"
 
     - name: Encode apps.json to base64
       run: |
@@ -37,40 +48,61 @@ jobs:
       run: |
         git clone --depth 1 https://github.com/frappe/frappe_docker.git
 
-    - name: Build Docker image
-      run: |
-        cd frappe_docker
-        
-        docker build \
-          --build-arg=FRAPPE_PATH=https://github.com/jemmia-diamond/frappe.git \
-          --build-arg=FRAPPE_BRANCH=version-15 \
-          --build-arg=PYTHON_VERSION=3.13.2 \
-          --build-arg=NODE_VERSION=18.20.2 \
-          --build-arg=APPS_JSON_BASE64=$APPS_JSON_BASE64 \
-          --tag=jemmia_erp \
-          --file=images/custom/Containerfile .
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
 
     - name: Log in to GitHub Container Registry
-      uses: docker/login-action@v2
+      uses: docker/login-action@v3
       with:
         registry: ghcr.io
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
 
-    - name: Push Docker image to GitHub Container Registry
-      run: |
-        docker tag jemmia_erp ghcr.io/${{ github.repository_owner }}/jemmia_erp:latest
-        docker push ghcr.io/${{ github.repository_owner }}/jemmia_erp:latest
+    - name: Extract metadata
+      id: meta
+      uses: docker/metadata-action@v5
+      with:
+        images: ghcr.io/${{ github.repository_owner }}/jemmia_erp
+        tags: |
+          type=ref,event=branch
+          type=sha,prefix={{branch}}-
+          type=raw,value=latest,enable={{is_default_branch}}
+
+    - name: Build and push Docker image
+      uses: docker/build-push-action@v5
+      with:
+        context: ./frappe_docker
+        file: ./frappe_docker/images/custom/Containerfile
+        push: true
+        tags: |
+          jemmia_erp:${{ steps.tag.outputs.unique_tag }}
+          jemmia_erp:latest
+          ${{ steps.meta.outputs.tags }}
+        labels: ${{ steps.meta.outputs.labels }}
+        build-args: |
+          FRAPPE_PATH=https://github.com/jemmia-diamond/frappe.git
+          FRAPPE_BRANCH=version-15
+          PYTHON_VERSION=3.13.2
+          NODE_VERSION=18.20.2
+          APPS_JSON_BASE64=${{ env.APPS_JSON_BASE64 }}
+        cache-from: |
+          type=gha,scope=main
+          type=gha,scope=submodules-${{ steps.submodules.outputs.submodule_hash }}
+        cache-to: |
+          type=gha,mode=max,scope=main
+          type=gha,mode=max,scope=submodules-${{ steps.submodules.outputs.submodule_hash }}
+        platforms: linux/amd64
 
     - name: Send POST request to webhook
       env:
         DEPLOY_HOOK_URL: ${{ secrets.DEPLOY_HOOK_URL }}
         COMMIT_SHA: ${{ github.sha }}
         COMMIT_MESSAGE: ${{ github.event.head_commit.message }}
+        IMAGE_TAG: ${{ steps.tag.outputs.unique_tag }}
       run: |
-        echo "Triggering Dokploy deployment..."
-        jq -n --arg ref "refs/heads/main" --arg id "$COMMIT_SHA" --arg message "$COMMIT_MESSAGE" \
-          '{ref:$ref, head_commit:{id:$id, message:$message}}' \
+        echo "Triggering Dokploy deployment with image tag: ${IMAGE_TAG}..."
+        jq -n --arg ref "refs/heads/main" --arg id "$COMMIT_SHA" --arg message "$COMMIT_MESSAGE" --arg tag "$IMAGE_TAG" \
+          '{ref:$ref, head_commit:{id:$id, message:$message}, image_tag:$tag}' \
           | curl -X POST \
               -H "Content-Type: application/json" \
               -H "X-GitHub-Event: push" \
