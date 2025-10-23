@@ -325,7 +325,7 @@ services:
     entrypoint: ["/bin/sh", "-c"]
     command:
       - |
-        sleep 30
+        sleep 10
         docker exec erp-appcompose-db5qnm-frontend-1 sh -c "mkdir -p sites/shared && rm -f sites/assets/assets.json && bench build --force && cp sites/assets/assets.json sites/shared/assets.json"
         docker exec erp-appcompose-db5qnm-backend-1 sh -c "cp sites/shared/assets.json sites/assets/assets.json"
         docker exec erp-appcompose-db5qnm-redis-cache-1 redis-cli FLUSHALL
