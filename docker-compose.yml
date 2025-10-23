@@ -36,6 +36,12 @@ services:
         bench set-config -g fn_bearer_token $$FN_BEARER_TOKEN;
         bench set-config -g priority_bearer_token $$PRIORITY_BEARER_TOKEN;
         bench set-config -g priority_base_url $$PRIORITY_BASE_URL;
+        bench set-config -g r2_enabled ${R2_ENABLED};
+        bench set-config -g r2_endpoint_url ${R2_ENDPOINT_URL};
+        bench set-config -g r2_access_key_id ${R2_ACCESS_KEY_ID};
+        bench set-config -g r2_secret_access_key ${R2_SECRET_ACCESS_KEY};
+        bench set-config -g r2_bucket ${R2_BUCKET};
+        bench set-config -g r2_public_url ${R2_PUBLIC_URL};
     environment:
       DB_HOST: ${DB_HOST:-db}
       DB_PORT: ${DB_PORT:-3306}
