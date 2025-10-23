@@ -2,5 +2,11 @@
   "db_name": "",
   "db_password": "",
   "db_type": "mariadb",
-  "db_user": ""
+  "db_user": "",
+  "r2_enabled": true, 
+  "r2_endpoint_url": "",
+  "r2_access_key_id": "",
+  "r2_secret_access_key": "",
+  "r2_bucket": "",
+  "r2_public_url": ""
 }

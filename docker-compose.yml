@@ -52,6 +52,13 @@ services:
       FN_BEARER_TOKEN: ${FN_BEARER_TOKEN}
       PRIORITY_BEARER_TOKEN: ${PRIORITY_BEARER_TOKEN}
       PRIORITY_BASE_URL: ${PRIORITY_BASE_URL}
+      R2_ENABLED: ${R2_ENABLED}
+      R2_ENDPOINT_URL: ${R2_ENDPOINT_URL}
+      R2_ACCESS_KEY_ID: ${R2_ACCESS_KEY_ID}
+      R2_SECRET_ACCESS_KEY: ${R2_SECRET_ACCESS_KEY}
+      R2_BUCKET: ${R2_BUCKET}
+      R2_PUBLIC_URL: ${R2_PUBLIC_URL}
+
     volumes:
       - sites:/home/frappe/frappe-bench/sites
       - logs:/home/frappe/frappe-bench/logs
