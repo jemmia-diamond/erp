@@ -36,6 +36,11 @@ services:
         bench set-config -g fn_bearer_token $$FN_BEARER_TOKEN;
         bench set-config -g priority_bearer_token $$PRIORITY_BEARER_TOKEN;
         bench set-config -g priority_base_url $$PRIORITY_BASE_URL;
+        bench set-config -g r2_enabled ${R2_ENABLED};
+        bench set-config -g r2_endpoint_url ${R2_ENDPOINT_URL};
+        bench set-config -g r2_access_key_id ${R2_ACCESS_KEY_ID};
+        bench set-config -g r2_secret_access_key ${R2_SECRET_ACCESS_KEY};
+        bench set-config -g r2_bucket ${R2_BUCKET};
     environment:
       DB_HOST: ${DB_HOST:-db}
       DB_PORT: ${DB_PORT:-3306}
@@ -52,6 +57,11 @@ services:
       FN_BEARER_TOKEN: ${FN_BEARER_TOKEN}
       PRIORITY_BEARER_TOKEN: ${PRIORITY_BEARER_TOKEN}
       PRIORITY_BASE_URL: ${PRIORITY_BASE_URL}
+      R2_ENABLED: ${R2_ENABLED}
+      R2_ENDPOINT_URL: ${R2_ENDPOINT_URL}
+      R2_ACCESS_KEY_ID: ${R2_ACCESS_KEY_ID}
+      R2_SECRET_ACCESS_KEY: ${R2_SECRET_ACCESS_KEY}
+      R2_BUCKET: ${R2_BUCKET}
     volumes:
       - sites:/home/frappe/frappe-bench/sites
       - logs:/home/frappe/frappe-bench/logs
@@ -315,7 +325,7 @@ services:
     entrypoint: ["/bin/sh", "-c"]
     command:
       - |
-        sleep 30
+        sleep 10
         docker exec erp-appcompose-db5qnm-frontend-1 sh -c "mkdir -p sites/shared && rm -f sites/assets/assets.json && bench build --force && cp sites/assets/assets.json sites/shared/assets.json"
         docker exec erp-appcompose-db5qnm-backend-1 sh -c "cp sites/shared/assets.json sites/assets/assets.json"
         docker exec erp-appcompose-db5qnm-redis-cache-1 redis-cli FLUSHALL
