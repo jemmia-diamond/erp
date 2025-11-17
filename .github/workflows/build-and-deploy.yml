@@ -75,10 +75,12 @@ jobs:
         run: |
           echo "Triggering Dokploy deployment..."
 
+          COMMIT_MESSAGE=$(git log -1 --pretty=%B)
+
           PAYLOAD=$(jq -n \
             --arg ref "refs/heads/main" \
             --arg id "${{ github.sha }}" \
-            --arg message "${{ github.event.head_commit.message }}" \
+            --arg message "$COMMIT_MESSAGE" \
             '{ref: $ref, head_commit: {id: $id, message: $message}}')
 
           curl -X POST \
