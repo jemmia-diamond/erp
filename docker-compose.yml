@@ -172,6 +172,7 @@ services:
         echo "sites/common_site_config.json found";
         [[ -d "sites/$${SITE_NAME}" ]] && echo "Site already exists" && exit 0;
         bench new-site --mariadb-user-host-login-scope='%' --admin-password=$${ADMIN_PASSWORD} --db-root-username=$${DB_ROOT_USERNAME} --db-root-password=$${DB_ROOT_PASSWORD} --db-port=$${DB_PORT} --install-app erpnext --set-default $${SITE_NAME};
+        bench --site $${SITE_NAME} install-app lms;
     environment:
       ADMIN_PASSWORD: ${ADMIN_PASSWORD}
       DB_ROOT_USERNAME: ${DB_ROOT_USERNAME}
