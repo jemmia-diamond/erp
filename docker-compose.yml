@@ -170,8 +170,23 @@ services:
           fi
         done;
         echo "sites/common_site_config.json found";
-        [[ -d "sites/$${SITE_NAME}" ]] && echo "Site already exists" && exit 0;
-        bench new-site --mariadb-user-host-login-scope='%' --admin-password=$${ADMIN_PASSWORD} --db-root-username=$${DB_ROOT_USERNAME} --db-root-password=$${DB_ROOT_PASSWORD} --db-port=$${DB_PORT} --install-app erpnext --set-default $${SITE_NAME};
+
+        if [[ ! -d "sites/$${SITE_NAME}" ]]; then
+          echo "Creating new site $${SITE_NAME}..."
+          bench new-site --mariadb-user-host-login-scope='%' \
+            --admin-password=$${ADMIN_PASSWORD} \
+            --db-root-username=$${DB_ROOT_USERNAME} \
+            --db-root-password=$${DB_ROOT_PASSWORD} \
+            --db-port=$${DB_PORT} \
+            --install-app erpnext \
+            --install-app lms \
+            --set-default $${SITE_NAME};
+        else
+          echo "Site $${SITE_NAME} already exists. Skipping creation.";
+        fi
+
+        echo "Installing LMS to site..."
+        bench --site $${SITE_NAME} install-app lms || echo "LMS might already be installed";
     environment:
       ADMIN_PASSWORD: ${ADMIN_PASSWORD}
       DB_ROOT_USERNAME: ${DB_ROOT_USERNAME}
