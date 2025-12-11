@@ -17,15 +17,5 @@
         "required": [],
         "idx": 2,
         "version": "15.57.4"
-    },
-    "lms": {
-        "is_repo": true,
-        "resolution": {
-            "commit_hash": "73ee1b2f0956e66e2a73e832857d02c85dfbde7b",
-            "branch": "develop"
-        },
-        "required": [],
-        "idx": 3,
-        "version": "2.41.0"
     }
 }
