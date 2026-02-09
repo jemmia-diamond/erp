@@ -5,7 +5,7 @@ on:
     branches: ["main"]
 
 env:
-  PYTHON_VERSION: "3.13.2"
+  PYTHON_VERSION: "3.11.9"
   NODE_VERSION: "18.20.2"
   FRAPPE_PATH: "https://github.com/jemmia-diamond/frappe.git"
   FRAPPE_BRANCH: "version-15"
