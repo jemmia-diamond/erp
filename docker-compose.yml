@@ -87,7 +87,8 @@ services:
       - bash
       - -c
       - |
-        /home/frappe/frappe-bench/env/bin/gunicorn \
+        /home/frappe/frappe-bench/env/bin/pip install 'setuptools==69.5.1'
+        exec /home/frappe/frappe-bench/env/bin/gunicorn \
           --chdir=/home/frappe/frappe-bench/sites \
           --bind=0.0.0.0:8000 \
           --threads=4 \
@@ -234,10 +235,11 @@ services:
       restart_policy:
         condition: on-failure
     command:
-      - bench
-      - worker
-      - --queue
-      - long,default,short
+      - bash
+      - -c
+      - |
+        /home/frappe/frappe-bench/env/bin/pip install 'setuptools==69.5.1'
+        exec bench worker --queue long,default,short
     environment:
       FRAPPE_SENTRY_DSN: ${FRAPPE_SENTRY_DSN}
       FRAPPE_SEENABLE_SENTRY_DB_MONITORINGNTRY_DSN: ${ENABLE_SENTRY_DB_MONITORING}
@@ -262,10 +264,11 @@ services:
       restart_policy:
         condition: on-failure
     command:
-      - bench
-      - worker
-      - --queue
-      - short,default
+      - bash
+      - -c
+      - |
+        /home/frappe/frappe-bench/env/bin/pip install 'setuptools==69.5.1'
+        exec bench worker --queue short,default
     environment:
       FRAPPE_SENTRY_DSN: ${FRAPPE_SENTRY_DSN}
       FRAPPE_SEENABLE_SENTRY_DB_MONITORINGNTRY_DSN: ${ENABLE_SENTRY_DB_MONITORING}
@@ -308,8 +311,11 @@ services:
       restart_policy:
         condition: on-failure
     command:
-      - bench
-      - schedule
+      - bash
+      - -c
+      - |
+        /home/frappe/frappe-bench/env/bin/pip install 'setuptools==69.5.1'
+        exec bench schedule
     environment:
       FRAPPE_SENTRY_DSN: ${FRAPPE_SENTRY_DSN}
       FRAPPE_SEENABLE_SENTRY_DB_MONITORINGNTRY_DSN: ${ENABLE_SENTRY_DB_MONITORING}
