@@ -87,7 +87,6 @@ services:
       - bash
       - -c
       - |
-        /home/frappe/frappe-bench/env/bin/pip install 'setuptools==69.5.1' && \
         /home/frappe/frappe-bench/env/bin/gunicorn \
           --chdir=/home/frappe/frappe-bench/sites \
           --bind=0.0.0.0:8000 \
