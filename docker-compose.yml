@@ -191,6 +191,7 @@ services:
     entrypoint: ["bash", "-c"]
     command:
       - >
+        /home/frappe/frappe-bench/env/bin/pip install 'setuptools==69.5.1';
         bench --site all set-config -p maintenance_mode 1;
         bench --site all set-config -p pause_scheduler 1;
         bench --site all migrate;
