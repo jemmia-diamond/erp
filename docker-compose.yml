@@ -220,6 +220,9 @@ services:
       - --collation-server=utf8mb4_unicode_ci
       - --skip-character-set-client-handshake
       - --skip-innodb-read-only-compressed
+      - --max-connections=200
+      - --max-user-connections=30
+      - --max-statement-time=50
     environment:
       MARIADB_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
     volumes:
