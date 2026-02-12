@@ -25,5 +25,9 @@
   "fn_base_url": "",
   "fn_bearer_token": "",
   "priority_bearer_token": "",
-  "priority_base_url": ""
+  "priority_base_url": "",
+  "rate_limit": {
+    "limit": 300,
+    "window": 1800
+  }
 }
