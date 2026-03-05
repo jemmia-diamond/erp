@@ -26,6 +26,25 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Notify Deploy Start (Lark)
+        env:
+          LARK_WEBHOOK_URL: ${{ secrets.LARK_WEBHOOK_URL }}
+        run: |
+          if [ -z "$LARK_WEBHOOK_URL" ]; then
+            echo "Lark webhook URL not configured."
+            exit 0
+          fi
+          
+          COMMIT_MSG=$(git log -1 --pretty=%B | head -n 1)
+          
+          PAYLOAD=$(jq -n \
+            --arg msg "🚀 Build & Deploy Started\nRepository: ${{ github.repository }}\nCommit: $COMMIT_MSG\nRun Details: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}" \
+            --arg event "deploy_start" \
+            --arg source "erp" \
+            '{msg: $msg, event: $event, source: $source}')
+
+          curl -X POST -H "Content-Type: application/json" -d "$PAYLOAD" "$LARK_WEBHOOK_URL"
+
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
@@ -88,3 +107,35 @@ jobs:
             -H "X-GitHub-Event: push" \
             -d "$PAYLOAD" \
             "$DEPLOY_HOOK_URL" || echo "Webhook failed, but continuing..."
+
+      - name: Notify Lark Deploy Status
+        if: always()
+        env:
+          LARK_WEBHOOK_URL: ${{ secrets.LARK_WEBHOOK_URL }}
+        run: |
+          if [ -z "$LARK_WEBHOOK_URL" ]; then
+            echo "Lark webhook URL not configured."
+            exit 0
+          fi
+
+          JOB_STATUS="${{ job.status }}"
+          if [ "$JOB_STATUS" = "success" ]; then
+            EMOJI="✅"
+            MSG="Build & Trigger Dokploy Succeeded"
+            EVENT="deploy_success"
+          else
+            EMOJI="❌"
+            MSG="Build & Deploy Failed"
+            EVENT="deploy_failure"
+          fi
+
+          COMMIT_MSG=$(git log -1 --pretty=%B | head -n 1)
+
+          PAYLOAD=$(jq -n \
+            --arg msg "$EMOJI $MSG\nRepository: ${{ github.repository }}\nCommit: $COMMIT_MSG\nRun Details: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}" \
+            --arg event "$EVENT" \
+            --arg source "erp" \
+            '{msg: $msg, event: $event, source: $source}')
+
+          curl -X POST -H "Content-Type: application/json" -d "$PAYLOAD" "$LARK_WEBHOOK_URL"
+
