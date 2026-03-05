@@ -40,7 +40,8 @@ jobs:
           PAYLOAD=$(jq -n \
             --arg msg "🚀 Build & Deploy Started\nRepository: ${{ github.repository }}\nCommit: $COMMIT_MSG\nRun Details: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}" \
             --arg event "deploy_start" \
-            '{msg: $msg, event: $event}')
+            --arg source "erp" \
+            '{msg: $msg, event: $event, source: $source}')
 
           curl -X POST -H "Content-Type: application/json" -d "$PAYLOAD" "$LARK_WEBHOOK_URL"
 
@@ -133,7 +134,8 @@ jobs:
           PAYLOAD=$(jq -n \
             --arg msg "$EMOJI $MSG\nRepository: ${{ github.repository }}\nCommit: $COMMIT_MSG\nRun Details: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}" \
             --arg event "$EVENT" \
-            '{msg: $msg, event: $event}')
+            --arg source "erp" \
+            '{msg: $msg, event: $event, source: $source}')
 
           curl -X POST -H "Content-Type: application/json" -d "$PAYLOAD" "$LARK_WEBHOOK_URL"
 
