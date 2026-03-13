@@ -88,3 +88,6 @@ jobs:
             -H "X-GitHub-Event: push" \
             -d "$PAYLOAD" \
             "$DEPLOY_HOOK_URL" || echo "Webhook failed, but continuing..."
+      - name: Deploy done
+        run: |
+          echo "Deploy done"
