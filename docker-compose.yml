@@ -1,5 +1,5 @@
 x-custom-image: &custom_image
-  image: ghcr.io/jemmia-diamond/jemmia_erp:latest
+  image: ghcr.io/jemmia-diamond/jemmia_erp:staging
   pull_policy: ${PULL_POLICY:-always}
   deploy:
     restart_policy:
