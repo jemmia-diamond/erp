@@ -2,7 +2,7 @@ name: Build and Deploy
 
 on:
   push:
-    branches: ["staging"]
+    branches: ["main"]
 
 env:
   PYTHON_VERSION: "3.14.0"
