@@ -27,7 +27,9 @@ podman build --no-cache \
 ### 3. Run
 ```bash
 cd ..
-podman-compose up
+
+# Set pull policy to never use local image
+PULL_POLICY=never podman-compose up
 ```
 
 ### 4. Access
