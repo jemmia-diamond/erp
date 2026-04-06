@@ -2,7 +2,7 @@ name: Build and Deploy
 
 on:
   push:
-    branches: ["main"]
+    branches: ["staging"]
 
 env:
   PYTHON_VERSION: "3.14.0"
@@ -71,7 +71,7 @@ jobs:
       - name: Trigger deployment webhook
         if: success()
         env:
-          DEPLOY_HOOK_URL: ${{ secrets.DEPLOY_HOOK_URL }}
+          DEPLOY_HOOK_URL: ${{ secrets.DEPLOY_STAGING_HOOK_URL }}
         run: |
           echo "Triggering Dokploy deployment..."
 
