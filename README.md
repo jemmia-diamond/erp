@@ -8,14 +8,8 @@ What is Frappe Framework? Frappe, pronounced fra-pay, is a full stack, batteries
 ### Required Dependencies
 
 ```bash
-brew install pyenv pipx redis mariadb@10.6 node@18 postgresql pkg-config mariadb-connector-c
-```
 
-**Frappe v16 requires Python 3.14.** Use pyenv to install it:
-```bash
-pyenv install 3.14.0
-pyenv local 3.14.0
-python --version
+brew install python@3.12 pipx redis mariadb@10.6 node@18 postgresql pkg-config mariadb-connector-c
 ```
 
 ### Environment Configuration
@@ -26,6 +20,9 @@ Add the following to your shell configuration file (`~/.zshrc` for Zsh):
 # Add to PATH
 echo 'export PATH="/opt/homebrew/opt/mariadb@10.6/bin:$PATH"' >> ~/.zshrc
 echo 'export PATH="/opt/homebrew/opt/redis@6.2/bin:$PATH"' >> ~/.zshrc
+echo 'export PATH="/opt/homebrew/opt/python@3.12/bin:$PATH"' >> ~/.zshrc
+echo 'alias python3="/opt/homebrew/opt/python@3.12/bin/python3.12"' >> ~/.zshrc
+echo 'alias python="/opt/homebrew/opt/python@3.12/bin/python3.12"' >> ~/.zshrc
 
 # Reload your shell configuration
 source ~/.zshrc
@@ -44,25 +41,12 @@ sudo mysql -u root -e "ALTER USER 'root'@'localhost' IDENTIFIED BY '123456'; FLU
 brew services start redis
 ```
 
-## Backup
-
-### Backup via Bench
-```bash
-bench --site dev.localhost backup
-```
-Backup files are saved to `sites/dev.localhost/private/backups/`.
-
-### Restore
-```bash
-mysql -u root -p123456 < backup_YYYYMMDD.sql
-```
-
 ## Installation
 
 ### 1. Create Virtual Environment
 
 ```bash
-~/.pyenv/versions/3.14.0/bin/python3.14 -m venv env
+python -m venv env
 source ./env/bin/activate
 ```
 
