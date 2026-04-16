@@ -41,7 +41,7 @@ jobs:
           export APPS_JSON_BASE64=$(base64 -w 0 deployment/apps.json)
           echo "APPS_JSON_BASE64=$APPS_JSON_BASE64" >> $GITHUB_ENV
 
-          git clone --depth 1 https://github.com/frappe/frappe_docker.git
+          git clone --depth 1 --branch v2.2.2 https://github.com/frappe/frappe_docker.git
 
       - name: Build Docker image
         working-directory: frappe_docker
