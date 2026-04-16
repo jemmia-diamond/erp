@@ -88,6 +88,7 @@ services:
       - -c
       - |
         /home/frappe/frappe-bench/env/bin/pip install 'setuptools==69.5.1'
+        /home/frappe/frappe-bench/env/bin/pip install --force-reinstall --no-deps google-api-python-client
         exec /home/frappe/frappe-bench/env/bin/gunicorn \
           --chdir=/home/frappe/frappe-bench/sites \
           --bind=0.0.0.0:8000 \
@@ -192,6 +193,7 @@ services:
     command:
       - >
         /home/frappe/frappe-bench/env/bin/pip install 'setuptools==69.5.1';
+        /home/frappe/frappe-bench/env/bin/pip install --force-reinstall --no-deps google-api-python-client;
         bench --site all set-config -p maintenance_mode 1;
         bench --site all set-config -p pause_scheduler 1;
         bench --site all migrate;
